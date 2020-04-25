@@ -35,6 +35,8 @@ void shubiao();                                                                 
 int  main();
 void luozi();                                                                          //落子声音
 void jinshou();
+void pass();
+void huaxian();
 void Eat_more_than_one();                                                              //如果死子大于等于2个(sizi>=1)，则执行此函数
 void shuaxin();
 //int  Dead_Or_Live(int x , int y , int kong);                                         //禁手与死活预计算函数,包含多个子的死活问题
@@ -43,8 +45,8 @@ void weiqi()                                                                    
 {
     int j=0;
 	int x = 3;                                                                         //棋子打印左位移量，为了对齐网格
-	//mciSendString(_T("open ./music/BGM2.mp3 alias bkmusic"), NULL, 0, NULL);           //打开背景音乐
-	//mciSendString(_T("play bkmusic repeat"), NULL, 0, NULL);                           //循环播放
+	//mciSendString(_T("open ./music/BGM2.mp3 alias bkmusic"), NULL, 0, NULL);          //打开背景音乐
+	//mciSendString(_T("play bkmusic repeat"), NULL, 0, NULL);                          //循环播放
 	initgraph(C, D, SHOWCONSOLE);                                                      //加上SHOWCONSOLE可以保留控制台
 	HWND hwnd = GetHWnd();                                                             //设置窗口标题文字 
 	SetWindowText(hwnd,_T( "围棋GO"));
@@ -52,10 +54,12 @@ void weiqi()                                                                    
 	BeginBatchDraw();                                                                  //Easy-x画图库函数，画图开始
 	while (1)                                                                          //循环下棋动作
 	{
+		shuaxin();                                                                    //方向刷新，放在鼠标动作前面
+		
 		shubiao();                                                                     //执行鼠标动作函数,搬到鼠标动作函数内部记录了																	                                                                                 //i++;	每下一次，记录一次步数,直接到具体鼠标点击的动作里记录，就解决了BUG
 		chizhi();                             
 		Eat_more_than_one();
-		shuaxin();                                                                     //每次刷新                                                               
+		//shuaxin();                                                                     //每次刷新                                                               
 		if (_kbhit())																   //监控键盘，点击键盘重新游戏
 		{
 			ch = _getch();
@@ -111,6 +115,7 @@ void weiqi()                                                                    
 				main();
 			}
 		}
+		
 	}
 	EndBatchDraw();																	      //Easy-x画图库函数，画图刷新	
 	cleardevice();
@@ -167,17 +172,37 @@ void shubiao()                                                                  
 							continue;
 						}
 				     }
-			   }
+			    }
 			
-			if (m.x >1240 && m.x < 1280 && m.y > 40 && m.y <80)                         //PASS按钮
+			if (m.x >800 && m.x < 1450 && m.y > 400 && m.y <800)                         //PASS按钮
 			{
 				i++;
+				pass();
+				for (zong = 1; zong < 20; zong++)                                          //打劫禁手处理,前手对方的落子，在本次下完后恢复对应值，下次能被吃
+				{
+					for (heng = 1; heng < 20; heng++)
+					{
+						if ((a >= 40 && a <= 760 && b >= 40 && b <= 760) && (weizhi[zong][heng] == 4 || weizhi[zong][heng] == 3)
+							&& (weizhi[a / B][b / B] != 3 && weizhi[a / B][b / B] != 4))
+							//在棋盘其他位置点击落子，打劫禁手位置切换为标记0，
+						{
+							weizhi[zong][heng] = 0;
+							if (weizhi[zong][heng] == 0)
+							{
+								_stprintf_s(bai, _T("%d"), 0);                                     //////																
+								outtextxy(zong*B - x, heng*B - 7, bai);                          /////////}
+							}
+							continue;
+						}
+					}
+				}
 				jinshou();
 			}
 			
 			else if (weizhi[a / B][b / B] == 1 || weizhi[a / B][b / B] == 2 || weizhi[a / B][b / B] == 3 || weizhi[a / B][b / B] == 4)          //在禁手位置点击无效
 			{
 				jinshou();
+				pass();
 				if(weizhi[a / B][b / B] == 3)
 					{
 						weizhi[a / B][b / B] = 3;
@@ -246,6 +271,8 @@ void shubiao()                                                                  
 						setlinecolor(WHITE);
 						setfillcolor(WHITE);
 						fillcircle(a, b, RQ);
+						//_stprintf_s(bai, _T("%d"), 2);
+						//outtextxy(bai1[i] - x, bai2[i] - 7, bai);                          //写白棋步数
 						//putimage(a - 20, b - 20, &img_go_b, NOTSRCERASE);
 						//putimage(a - 20, b - 20, &img_go_bk, SRCINVERT);    // 
 						//FlushBatchDraw();  //
@@ -321,6 +348,14 @@ void shubiao()                                                                  
 						settextcolor(WHITE);
 						outtextxy(1000, 380, hong);                     
 						i++;
+						huaxian();                                                                   /////////////////////////////////////
+						setlinecolor(WHITE);
+						setfillcolor(WHITE);
+						fillcircle(a, b, RQ);
+						setbkcolor(WHITE);												   //文字背景   
+						settextcolor(BLACK);                                               //文字颜色
+						_stprintf_s(bai, _T("%d"), 2);
+						outtextxy(a - x, b - 7, bai);                          //写白棋步数
 						/**********这里应该是触发是否提子的时候*************************************************************************************************
 						for (zong = 1; zong < 20; zong++)
 						{
@@ -568,9 +603,18 @@ void shubiao()                                                                  
 						fillcircle(1120, 410, 10);
 						_stprintf_s(hong, _T("%d"), i);
 						settextcolor(BLACK);
-						outtextxy(1000, 380, hong);                       //写黑棋步数
+						outtextxy(1000, 380, hong);                                             //写黑棋步数
 
 						i++;
+
+						huaxian();
+						setlinecolor(RGB(30, 30, 30));
+						setfillcolor(RGB(30, 30, 30));
+						fillcircle(a, b, RQ);
+						setbkcolor(RGB(30, 30, 30));									   //文字背景   
+						settextcolor(WHITE);                                               //文字颜色
+						_stprintf_s(hong, _T("%d"), 1);
+						outtextxy(a - x, b - 7, hong);                       //写黑棋步数
 
 						/*for (zong = 1; zong < 20; zong++)
 						{
@@ -776,6 +820,8 @@ void shubiao()                                                                  
 						closegraph();
 						main();
 				}
+
+			
 				FlushBatchDraw();													    //保持前面图形，增加刷新内容	
 				continue;                                    /////////////////////////////////////////////////////
 			}	
@@ -1755,6 +1801,13 @@ void jinshou()
 	mciSendString(_T("play jjmusic"), NULL, 0, NULL);                  // 仅播放一次
 }
 
+void pass()
+{
+	mciSendString(_T("close  psmusic"), NULL, 0, NULL);               // 落子声音，先把前面一次的音乐关闭  
+	mciSendString(_T("open ./music/pass.mp3 alias psmusic"), NULL, 0, NULL);                                // 打开音乐
+	mciSendString(_T("play psmusic"), NULL, 0, NULL);                  // 仅播放一次
+}
+
 void Eat_more_than_one()
 {    
 	//int B_dead = 0;																		       //黑子死子数量，每次归1
@@ -1771,56 +1824,11 @@ void Eat_more_than_one()
 	_stprintf_s(hong, _T("%d"), B_dead);                                           //把步数数字变成字符，下一步显示字符  
 	outtextxy(1320, 360, hong);
 	FlushBatchDraw();
+	
 	for (x = 1; x <= 19; x++)
-	{
+	{	
 		for (y = 1; y <= 19; y++)
 		{
-			if ((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
-				&&
-				(weizhi[x - 1][y] != 8 || weizhi[x + 1][y] != 8 || weizhi[x][y - 1] != 8 || weizhi[x][y + 1] != 8)
-				&&
-				(weizhi[x - 1][y] !=2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2)
-				&&
-				(weizhi[x - 1][y] != 4 && weizhi[x + 1][y] != 4 && weizhi[x][y - 1] != 4 && weizhi[x][y + 1] != 4))
-
-			{
-				weizhi[x][y] =8;
-				adss[i][0] = x*B;
-				adss[i][1] = y*B;
-				//Eat_more_than_one();                                                             //还得再搜索啊
-				//W_dead++;
-				//SamW_dead = SamW_dead + W_dead;
-				for (x = 1; x <= 19; x++)
-				{
-					for (y = 1; y <= 19; y++)
-					{
-						if (weizhi[x][y] == 8)
-						   {
-						 	getimage(&img, 1020, 60, 40, 40);                                      ///////////////////观察效果用途
-							putimage(x*B - 20, y*B - 20, &img);                                    //画白棋/////////////////////////////////////////
-							weizhi[x][y] = 0;
-							_stprintf_s(hong, _T("%d"), 0);                                        //把步数数字变成字符，下一步显示字符  
-							outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-							W_dead++;
-						    }
-					}
-				}
-				/*for (int j = 0; j <= i; j++)
-				{
-					
-					weizhi[adss[j][0] / B][adss[j][1] / B] = 0;
-					_stprintf_s(hong, _T("%d"), 7);                                               //把步数数字变成字符，下一步显示字符  
-					outtextxy(adss[i][0] - 3, adss[i][1] - 7, hong);                              //写步数
-					getimage(&img, 1020, 60, 40, 40);                                             ///////////////////观察效果用途
-					putimage(adss[j][0] - 20, adss[j][1] - 20, &img);                             /////////////////////观察效果用途
-					//FlushBatchDraw();
-				}
-
-				_stprintf_s(hong, _T("%d"), SamW_dead);                                           //把步数数字变成字符，下一步显示字符  
-				outtextxy(1150, 360, hong);                                                        //写步数       */
-				luozi();
-				exit;
-			}
 			/*else if (weizhi[x][y] == 1 && weizhi[x - 1][y] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2)
 			{
 			weizhi[x][y] = 2;
@@ -1830,11 +1838,13 @@ void Eat_more_than_one()
 			getimage(&img, 1020, 60, 40, 40);                                                     ///////////////////观察效果用途
 			putimage(x*B - 20, y*B - 20, &img);                                                   /////////////////////观察效果用途
 			}*/
+			
+				
 
-			else if((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
+			 if((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
 				    &&(weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2)
 				    && (weizhi[x - 1][y] != 2 || weizhi[x + 1][y] != 2 || weizhi[x][y - 1] != 2 || weizhi[x][y + 1] != 2))
-			{
+				{
 				weizhi[x][y] = 8;
 				adss[i][0] = x*B;
 				adss[i][1] = y*B;
@@ -1846,8 +1856,26 @@ void Eat_more_than_one()
 				_stprintf_s(hong, _T("%d"), 8);                                        //把步数数字变成字符，下一步显示字符  
 				outtextxy(x*B-3, y*B-7, hong);                                  //写步数
 				Eat_more_than_one();                                            //////////////////开始递归循环,  对内存监控发现，鼠标不点击，数据一直在跑
-			}
+				}
 			
+			 else if ((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
+				 &&
+				 (weizhi[x - 1][y] == 8 || weizhi[x + 1][y] == 8 || weizhi[x][y - 1] == 8 || weizhi[x][y + 1] == 8)
+				 &&
+				 (weizhi[x - 1][y] != 2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2)
+				 &&
+				 (weizhi[x - 1][y] != 4 && weizhi[x + 1][y] != 4 && weizhi[x][y - 1] != 4 && weizhi[x][y + 1] != 4))
+
+				 {
+				 weizhi[x][y] = 8;
+				 adss[i][0] = x*B;
+				 adss[i][1] = y*B;
+				 //Eat_more_than_one();                                                             //还得再搜索啊
+				 //W_dead++;
+				 //SamW_dead = SamW_dead + W_dead;
+				 exit;
+				
+			 }
 
 			//W_dead = i;
 			//SamW_dead += i;
@@ -1862,30 +1890,106 @@ void Eat_more_than_one()
 void shuaxin() 
 {
 	int x, y;
-	for (x = 1; x <= 19; x++)
+	for (x = 19; x >= 1; x--)
 	{
-		for (y = 1; y <= 19; y++)
+		for (y = 19; y >= 1; y--)
 		{
-			if (weizhi[x][y] == 8) 
-			{
-							setlinecolor(WHITE);
-							setfillcolor(WHITE);
-							fillcircle(x, y, RQ);                                                //画白棋/////////////////////////////////////////
+		
+			if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] != 2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2))
+					{
+						for (x = 1; x <= 19; x++)
+						{
+							for (y = 1; y <= 19; y++)
+							{
+								if (weizhi[x][y] == 8)
+								{
+									getimage(&img, 1020, 60, 40, 40);                                      ///////////////////观察效果用途
+									putimage(x*B - 20, y*B - 20, &img);                                    //画白棋/////////////////////////////////////////
+									weizhi[x][y] = 0;
+									_stprintf_s(hong, _T("%d"), 0);                                        //把步数数字变成字符，下一步显示字符  
+									outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
+									W_dead++;
+								}
+							}
+						}
+						/*for (int j = 0; j <= i; j++)
+						{
+
+						weizhi[adss[j][0] / B][adss[j][1] / B] = 0;
+						_stprintf_s(hong, _T("%d"), 7);                                               //把步数数字变成字符，下一步显示字符
+						outtextxy(adss[i][0] - 3, adss[i][1] - 7, hong);                              //写步数
+						getimage(&img, 1020, 60, 40, 40);                                             ///////////////////观察效果用途
+						putimage(adss[j][0] - 20, adss[j][1] - 20, &img);                             /////////////////////观察效果用途
+						//FlushBatchDraw();
+						}
+
+						_stprintf_s(hong, _T("%d"), SamW_dead);                                           //把步数数字变成字符，下一步显示字符
+						outtextxy(1150, 360, hong);                                                        //写步数       */
+						luozi();
+						exit;
+
+					}
+			else if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2))
+					{
+						//setlinecolor(WHITE);
+						//setfillcolor(WHITE);
+						//fillcircle(x, y, RQ);                                                  //画白棋/////////////////////////////////////////
+
 							weizhi[x][y] = 2;
-							_stprintf_s(hong, _T("%d"), 82);                                        //把步数数字变成字符，下一步显示字符  
-							outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-			}
-			else if (weizhi[x][y] == 7)
-			{
+							_stprintf_s(hong, _T("%d"), 2);                                        //把步数数字变成字符，下一步显示字符  
+							outtextxy(x*B - 3, y*B - 7, hong);                                      //写步数
+
+					}
+
+			else if( (weizhi[x][y] == 7) && (weizhi[x - 1][y] == 1 || weizhi[x + 1][y] == 1 || weizhi[x][y - 1] == 1 || weizhi[x][y + 1] == 1))
+					{
 							setlinecolor(BLACK);
 							setfillcolor(BLACK);
 							fillcircle(x, y, RQ);                                                //画白棋/////////////////////////////////////////
 							weizhi[x][y] = 1;
 							_stprintf_s(hong, _T("%d"), 1);                                        //把步数数字变成字符，下一步显示字符  
 							outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-			}
+					}
 		}
 	}	
+}
+
+void huaxian()
+{
+	int x, y;
+	int r, g, b;
+	setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
+
+		for (x = 1; x <= 19; x++)                                                      //慢速度划线
+		{
+			for (y = 1; y <= 19; y++)
+			{
+				//srand((unsigned)time(NULL));
+				r = rand() % 255;
+				g = rand() % 255;
+				b = rand() % 255;
+				setcolor(RGB(r,g,b));
+				line(x * 40, B, x * 40, A);											   //设置线条颜色
+				srand((unsigned)time(NULL));
+				r = rand() % 255;
+				g = rand() % 255;
+				b = rand() % 255;
+				setcolor(RGB(b,g,r));
+				line(B, y * 40, A, y * 40);											   //画纵横十九路
+				Sleep(35);
+				FlushBatchDraw();
+			}
+		}
+
+		for (x = 1; x <= 19; x++)                                                      //恢复白棋盘
+		{
+			for (y = 1; y <= 19; y++)
+			{
+				setcolor(RGB(255, 255, 255));											 //设置线条颜色											 
+				line(B, y*40, A, y*40);
+				line(x*40, B, x*40, A);
+			}
+		}
 }
 
 	/* if (who == 2)                                                                             //白棋
