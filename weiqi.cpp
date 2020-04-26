@@ -1,6 +1,4 @@
 #include"头文件.h"     
-//#pragma comment(lib,"Winmm.lib")       // 引用 Windows Multimedia API
-
 #define C 1500																		   //窗口长度   
 #define D  800                                                                         //窗口高度
 #define A 760                                                                          //棋盘尺寸
@@ -14,18 +12,16 @@ int hong2[200];
 int bai1[100];                                                                         //白棋坐标
 int bai2[100];
 int addrss[300][2];                                                                   //记录每一步坐标，用i替换300，
-																					   /*  addrss[i][0]=a/B;
-																					       addrss[i][1]=b/B;    */
 int weizhi[21][21] = {0};                                                              //初始位置都没有棋子，记录为0 
 int zong, heng;                                                                        //纵横十九路
 int a, b;
-int adss[100][2];																	       //用于记录死子位置，每次复位
-static int B_dead=0;																		       //黑子死子数量，每次归1
-static int W_dead=0;																		       //白子死子数量，每次归1
-int SamB_dead = 0;																		   //黑子总共死子数量
-int SamW_dead = 0;																		   //黑子总共死子数量
+int adss[100][2];																	   //用于记录死子位置，每次复位
+static int B_dead=0;																   //黑子死子数量，每次归1
+static int W_dead=0;																   //白子死子数量，每次归1
+int Sam_B_dead = 0;																	   //黑子总共死子数量
+int Sam_W_dead = 0;																	   //黑子总共死子数量
 int ch;                                                                                //记录按键
-
+int T = 0;                                                                            //////////////////////////
 TCHAR bai[10];
 TCHAR hong[10];                                                                        //存储步数字符，显示棋子步数
 //IMAGE img_go_b, img_go_bk;
@@ -35,12 +31,21 @@ void shubiao();                                                                 
 int  main();
 void luozi();                                                                          //落子声音
 void jinshou();
+void jia_yan_b();
+void jia_yan_w();
 void pass();
 void huaxian();
-void Eat_more_than_one();                                                              //如果死子大于等于2个(sizi>=1)，则执行此函数
-void shuaxin();
-//int  Dead_Or_Live(int x , int y , int kong);                                         //禁手与死活预计算函数,包含多个子的死活问题
-void chizhi();
+void Eat_more_than_one_w();                                                              //死子大于等于2个(sizi>=1)，则执行此函数
+void Eat_more_than_one_b();
+void shuaxin_w();
+void chizhi_w();
+void shuaxin_b();
+void chizhi_b();
+void dao_pu();                                                                          //经典的倒扑，打二还一
+void no_breath();                                                                       //无气的位置
+
+/********************************************************************************************************************************************************/
+
 void weiqi()                                                                            //主函数，打开界面
 {
     int j=0;
@@ -54,12 +59,30 @@ void weiqi()                                                                    
 	BeginBatchDraw();                                                                  //Easy-x画图库函数，画图开始
 	while (1)                                                                          //循环下棋动作
 	{
-		shuaxin();                                                                    //方向刷新，放在鼠标动作前面
-		
-		shubiao();                                                                     //执行鼠标动作函数,搬到鼠标动作函数内部记录了																	                                                                                 //i++;	每下一次，记录一次步数,直接到具体鼠标点击的动作里记录，就解决了BUG
-		chizhi();                             
-		Eat_more_than_one();
-		//shuaxin();                                                                     //每次刷新                                                               
+		no_breath();
+		dao_pu();
+		jia_yan_b();
+		jia_yan_w();
+		shubiao();                                                                     //执行鼠标动作函数,搬到鼠标动作函数内部记录了	
+		if (i % 2 == 0)
+		{
+			chizhi_w();
+			//chizhi_b();
+			Eat_more_than_one_w();
+			shuaxin_w();                                                                     //方向刷新，放在鼠标动作前面
+			
+			
+		}
+		if (i % 2 == 1)
+		{
+			chizhi_b();
+			chizhi_w();
+			//Eat_more_than_one_b();
+			shuaxin_b();
+
+			
+		}
+		//JIN_SHOU;                                                       //每次刷新                                                               
 		if (_kbhit())																   //监控键盘，点击键盘重新游戏
 		{
 			ch = _getch();
@@ -129,7 +152,7 @@ void shubiao()                                                                  
 	//loadimage(&img_go_bk, _T("./img/go-bk.jpg"));
 	//int a, b;                                                                          //遍历步数
 	//int you_a, you_b;
-	int x=3;
+	
 	for (heng = 0; heng <= 20; heng++)                                                 //棋盘外围一圈赋值，计算边线落子吃子情况
 			{
 			weizhi[heng][0] = 5;
@@ -146,7 +169,9 @@ void shubiao()                                                                  
 			{
 			weizhi[20][zong] = 5;
 			}
+
 	
+	int x = 3;
 	MOUSEMSG m;																	       //定义鼠标消息
 	while (MouseHit()  )															   //这个函数用于检测当前是否有鼠标消息
 	{
@@ -196,24 +221,30 @@ void shubiao()                                                                  
 						}
 					}
 				}
-				jinshou();
+				//jinshou();
 			}
 			
-			else if (weizhi[a / B][b / B] == 1 || weizhi[a / B][b / B] == 2 || weizhi[a / B][b / B] == 3 || weizhi[a / B][b / B] == 4)          //在禁手位置点击无效
+			else if (weizhi[a / B][b / B] == 1 || weizhi[a / B][b / B] == 2 || weizhi[a / B][b / B] == 3 || weizhi[a / B][b / B] == 4 )          //在禁手位置点击无效
 			{
 				jinshou();
-				pass();
-				if(weizhi[a / B][b / B] == 3)
-					{
-						weizhi[a / B][b / B] = 3;
-					}
-				if (weizhi[a / B][b / B] == 4)
-					{
-						weizhi[a / B][b / B] = 4;
-					}
+				//pass();
+					if(weizhi[a / B][b / B] == 3)
+						{
+							weizhi[a / B][b / B] = 3;
+						}
+					if (weizhi[a / B][b / B] == 4)
+						{
+							weizhi[a / B][b / B] = 4;
+						}
+					if (weizhi[a / B][b / B] == 5)
+						{
+							weizhi[a / B][b / B] = 5;
+						}
 				//i--;
 				continue;
 			}
+
+			
 
 			else
 			{
@@ -263,7 +294,7 @@ void shubiao()                                                                  
 
 				if (a >= 40 && a <= 760 && b >= 40 && b <= 760)                          //记录位置状态,有棋子则实现禁手
 				{
-					 if (i % 2 == 0 && ((weizhi[a / B][b / B] == 0)|| (weizhi[a / B][b / B] != 3)) && (weizhi[a / B][b / B] != (weizhi[bai1[i - 2] / B][bai2[i - 2] / B]))	)  
+					 if (i % 2 == 0 &&  weizhi[a / B][b / B] != 5 && ((weizhi[a / B][b / B] == 0) || (weizhi[a / B][b / B] != 3) || weizhi[a / B][b / B] == 6))
 				    //白棋行动，轮流下棋算法，步数除以2的余数，只有0或1，对应两个玩家
 					//if (i % 2 == 0 && (weizhi[a / B][b / B] == 0))                        //写好函数后这里就不用复杂的逻辑计算了
 					{
@@ -348,14 +379,14 @@ void shubiao()                                                                  
 						settextcolor(WHITE);
 						outtextxy(1000, 380, hong);                     
 						i++;
-						huaxian();                                                                   /////////////////////////////////////
+						//huaxian();                                                                   /////////////////////////////////////
 						setlinecolor(WHITE);
 						setfillcolor(WHITE);
 						fillcircle(a, b, RQ);
 						setbkcolor(WHITE);												   //文字背景   
 						settextcolor(BLACK);                                               //文字颜色
 						_stprintf_s(bai, _T("%d"), 2);
-						outtextxy(a - x, b - 7, bai);                          //写白棋步数
+						outtextxy(a - x, b - 7, bai);                                      //写白棋步数
 						/**********这里应该是触发是否提子的时候*************************************************************************************************
 						for (zong = 1; zong < 20; zong++)
 						{
@@ -527,8 +558,8 @@ void shubiao()                                                                  
 					/****边线提子大概思路是将外围扩大一路，即纵横第二十路，全部赋值为5，计算的时候直接调用就行，总表数据是从0到800，单独用一个二维数组表示***/
 					/****四个角暂时还没有处理***************************************************************************************************************/
 
-					else if (i % 2 == 1 && ((weizhi[a / B][b / B] == 0) || (weizhi[a / B][b / B] != 4)) 
-						     && (weizhi[a / B][b / B] != (weizhi[bai1[i - 2] / B][bai2[i - 2] / B])))                                                //黑棋行动
+					else if (i % 2 == 1 && weizhi[a / B][b / B] != 6 && ((weizhi[a / B][b / B] == 0) || (weizhi[a / B][b / B] != 4) || weizhi[a / B][b / B] == 5))
+						                                                                    //黑棋行动
 					{ 
 						weizhi[a / 40][b / 40] = 1;                                        //记录位置的状态，1为有黑棋子，0为没有棋子，2为有白色棋子
 
@@ -544,12 +575,12 @@ void shubiao()                                                                  
 
 						setbkcolor(RGB(30, 30, 30));									   //文字背景   
 						settextcolor(WHITE);                                               //文字颜色
-						//_stprintf_s(hong, _T("%d"), i);                                    //把步数数字变成字符，下一步显示字符 
+						//_stprintf_s(hong, _T("%d"), i);                                  //把步数数字变成字符，下一步显示字符 
 						_stprintf_s(hong, _T("%d"), 1);
 						//if (i >= 10)
 						//	x = 7;
 						outtextxy(hong1[i] - x, hong2[i] - 7, hong);                       //写黑棋步数
-							for (heng = 0; heng <= 20; heng++)                                  //棋盘外围一圈赋值，切换为落子方
+							for (heng = 0; heng <= 20; heng++)                             //棋盘外围一圈赋值，切换为落子方
 								{
 									weizhi[heng][0] = 1;
 								}
@@ -607,14 +638,14 @@ void shubiao()                                                                  
 
 						i++;
 
-						huaxian();
+						//huaxian();
 						setlinecolor(RGB(30, 30, 30));
 						setfillcolor(RGB(30, 30, 30));
 						fillcircle(a, b, RQ);
-						setbkcolor(RGB(30, 30, 30));									   //文字背景   
-						settextcolor(WHITE);                                               //文字颜色
+						setbkcolor(RGB(30, 30, 30));									       //文字背景   
+						settextcolor(WHITE);												   //文字颜色
 						_stprintf_s(hong, _T("%d"), 1);
-						outtextxy(a - x, b - 7, hong);                       //写黑棋步数
+						outtextxy(a - x, b - 7, hong);										   //写黑棋步数
 
 						/*for (zong = 1; zong < 20; zong++)
 						{
@@ -813,7 +844,7 @@ void shubiao()                                                                  
 						 // i++;                                                                //记录步数
 					}
 				}
-				else if (m.x > 1300 && m.x < 1340 && m.y > 40 && m.y < 80)                           //退出按钮                       
+				else if (m.x > 1300 && m.x < 1340 && m.y > 40 && m.y < 80)                      //退出按钮                       
 				{
 						cleardevice();
 						fflush(stdout);
@@ -822,7 +853,7 @@ void shubiao()                                                                  
 				}
 
 			
-				FlushBatchDraw();													    //保持前面图形，增加刷新内容	
+				FlushBatchDraw();													             //保持前面图形，增加刷新内容	
 				continue;                                    /////////////////////////////////////////////////////
 			}	
 		}
@@ -1053,303 +1084,440 @@ void luozi()
 	mciSendString(_T("play gemusic"), NULL, 0, NULL);                  // 仅播放一次
 }
 
-void chizhi() 
+void jinshou()
 {
-	for (zong = a / B - 1,heng=b/B; zong >= 1; zong--)
-	    {
-			if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
-			{
-				getimage(&img, 1020, 60, 40, 40);
-				putimage(zong*B - 20, heng*B - 20, &img);
-				weizhi[zong][heng] = 3;
-				//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-				//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
-				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
-				{
-					getimage(&img, 1020, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-				{
-					getimage(&img, 1020, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-				{
-					getimage(&img, 980, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-				{
-					getimage(&img, 1180, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 40)                               //左上角
-				{
-					getimage(&img, 980, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 40)                              //右上角
-				{
-					getimage(&img, 1180, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 760)                             //右下角
-				{
-					getimage(&img, 1180, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 760)
-				{
-					getimage(&img, 980, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																											// }
-				_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
-				outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
+	mciSendString(_T("close jjmusic"), NULL, 0, NULL);                 // 落子声音，先把前面一次的音乐关闭  
+	mciSendString(_T("open ./music/gotEnemy.mp3 alias jjmusic"), NULL, 0, NULL);                                // 打开音乐
+	mciSendString(_T("play jjmusic"), NULL, 0, NULL);                  // 仅播放一次
 
-				W_dead++;
-			}
-			else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
-			{
-				getimage(&img, 1020, 60, 40, 40);
-				putimage(zong*B - 20, heng*B - 20, &img);
-				weizhi[zong][heng] = 4;
-				//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-				//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
-				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
-				{
-					getimage(&img, 1020, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-				{
-					getimage(&img, 1020, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-				{
-					getimage(&img, 980, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-				{
-					getimage(&img, 1180, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 40)                               //左上角
-				{
-					getimage(&img, 980, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 40)                              //右上角
-				{
-					getimage(&img, 1180, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 760)                             //右下角                      
-				{
-					getimage(&img, 1180, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 760)
-				{
-					getimage(&img, 980, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																											// }
-				_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
-				outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
-														
-				B_dead++;
-			}
-		}
-	for (zong = a / B + 1, heng = b / B; zong <= 19; zong++)
+	mciSendString(_T("close  psmusic"), NULL, 0, NULL);               // 落子声音，先把前面一次的音乐关闭  
+	mciSendString(_T("open ./music/pass.mp3 alias psmusic"), NULL, 0, NULL);                                // 打开音乐
+	mciSendString(_T("play psmusic"), NULL, 0, NULL);                  // 仅播放一次
+
+
+}
+
+void jia_yan_b()                                                                     //跟倒扑 打二还一很相似
+{
+	int x, y;
+	for (x = 1; x <= 19; x++)
 		{
-			if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+			for (y = 1; y <= 19; y++) 
 			{
-				getimage(&img, 1020, 60, 40, 40);
-				putimage(zong*B - 20, heng*B - 20, &img);
-				weizhi[zong][heng] = 3;
-				//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-				//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
-				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
-				{
-					getimage(&img, 1020, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-				{
-					getimage(&img, 1020, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-				{
-					getimage(&img, 980, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-				{
-					getimage(&img, 1180, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 40)                               //左上角
-				{
-					getimage(&img, 980, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 40)                              //右上角
-				{
-					getimage(&img, 1180, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 760)                             //右下角
-				{
-					getimage(&img, 1180, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 760)
-				{
-					getimage(&img, 980, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																											// }
-				_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
-				outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
-				W_dead++;
+
+				/*if  ( ( weizhi[x][y] == 5 )
+					&& (( weizhi[x - 1][y-1] == 2 && weizhi[x + 1][y-1] == 2 && weizhi[x][y-2] == 2 )       //上包围
+					|| (  weizhi[x - 1][y-1] == 2 && weizhi[x - 1][y+1] == 2 && weizhi[x-2][y] == 2 )       //左包围
+					|| (  weizhi[x - 1][y+1] == 2 && weizhi[x + 1][y+1] == 2 && weizhi[x][y+2] == 2 )       //下包围
+					|| (  weizhi[x + 1][y+1] == 2 && weizhi[x + 1][y-1] == 2 && weizhi[x+2][y] == 2 ))  )   //右包围
+					*/
+				if ((weizhi[x][y] == 1)
+					&& (weizhi[x - 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y + 1] == 5)           //假眼在下边
+					|| (weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x - 1][y] == 5)         //假眼在左边
+					|| (weizhi[x - 1][y] == 2 && weizhi[x][y + 1] == 2 && weizhi[x][y - 1] == 2 && weizhi[x + 1][y] == 5)     //   假眼在右边
+					|| (weizhi[x - 1][y] == 2 && weizhi[x][y + 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 5))   // 假眼在上边
+					for (x = 1; x <= 19; x++)
+					{
+						for (y = 1; y <= 19; y++)
+						{
+							if (weizhi[x][y] == 5)
+							{
+								weizhi[x][y] = 10;
+								_stprintf_s(bai, _T("%d"), 10);                                     //////																
+								outtextxy(x*B - 7, y*B - 7, bai);
+								//FlushBatchDraw();
+							}
+						}
+					}
 			}
-			else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
+		}	
+}
+
+void jia_yan_w()
+{
+	for (int x = 1; x <= 19; x++)
+	{
+		for (int y = 1; y <= 19; y++)
+		{
+			if ((weizhi[x][y] == 2)
+				&& (weizhi[x - 1][y] == 1 && weizhi[x][y - 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x][y + 1] == 6)           //假眼在下边
+				|| (weizhi[x][y - 1] == 1 && weizhi[x][y + 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x - 1][y] == 6)         //假眼在左边
+				|| (weizhi[x - 1][y] == 1 && weizhi[x][y + 1] == 1 && weizhi[x][y - 1] == 1 && weizhi[x + 1][y] == 6)     //   假眼在右边
+				|| (weizhi[x - 1][y] == 1 && weizhi[x][y + 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x][y - 1] == 6))   // 假眼在上边
+				for (x = 1; x <= 19; x++)
+				{
+					for (y = 1; y <= 19; y++)
+					{
+						if (weizhi[x][y] == 6)
+						{
+							weizhi[x][y] = 9;
+							_stprintf_s(bai, _T("%d"), 9);                                     //////																
+							outtextxy(x*B - 3, y*B - 7, bai);
+							//FlushBatchDraw();
+						}
+					}
+				}
+		}
+	}
+}
+	
+void no_breath()
+{
+	for (int x = 1; x <= 19; x++)                                                   //禁手单列测试
+	{
+		for (int y = 1; y <= 19; y++)
+		{
+			if ((weizhi[x][y] == 0||weizhi[x][y] == 10) && (weizhi[x - 1][y] == 1 && weizhi[x + 1][y] == 1 && weizhi[x][y - 1] == 1 && weizhi[x][y + 1] == 1))
 			{
-				getimage(&img, 1020, 60, 40, 40);
-				putimage(zong*B - 20, heng*B - 20, &img);
-				weizhi[zong][heng] = 4;
-				//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-				//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
-				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-				{
-					getimage(&img, 1020, 100, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
-				{
-					getimage(&img, 1020, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-				{
-					getimage(&img, 1020, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-				{
-					getimage(&img, 980, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-				{
-					getimage(&img, 1180, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 40)                               //左上角
-				{
-					getimage(&img, 980, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 40)                              //右上角
-				{
-					getimage(&img, 1180, 20, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 760 && heng*B == 760)                             //右下角                      
-				{
-					getimage(&img, 1180, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				else if (zong*B == 40 && heng*B == 760)
-				{
-					getimage(&img, 980, 180, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-				}
-				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																											// }
-				_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
-				outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
-				B_dead++;																					//tizi(a/B ,b/B);     //提掉白死子
+				weizhi[x][y] = 5;
+				_stprintf_s(bai, _T("%d"), 5);                                     //////																
+				outtextxy(x*B - 3, y*B - 7, bai);
 			}
 		}
+	}
+
+	for (int x = 1; x <= 19; x++)                                                   //禁手单列测试
+	{
+		for (int y = 1; y <= 19; y++)
+		{
+			if ((weizhi[x][y] == 0|| weizhi[x][y] == 9) && (weizhi[x - 1][y] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2))
+			{
+				weizhi[x][y] = 6;
+				_stprintf_s(bai, _T("%d"), 6);                                     //////																
+				outtextxy(x*B - 3, y*B - 7, bai);
+			}
+		}
+	}
+
+
+
+}
+
+void pass()
+{
+	mciSendString(_T("close  pssmusic"), NULL, 0, NULL);               // 落子声音，先把前面一次的音乐关闭  
+	mciSendString(_T("open ./music/pass.wav alias pssmusic"), NULL, 0, NULL);                                // 打开音乐
+	mciSendString(_T("play pssmusic"), NULL, 0, NULL);                  // 仅播放一次
+}
+
+void Eat_more_than_one_w()
+{    
+	//int B_dead = 0;																		       //黑子死子数量，每次归1
+	//int W_dead = 0;																		       //白子死子数量，每次归1
+	int x, y;
+	int i=0;
+	//int SamB_dead = 0;																		   //黑子总共死子数量
+	//int W_dead = 0;																		   //黑子总共死子数量
+	TCHAR s13[] = _T("↓当前步数   黑方提子-             白方提子-    ");
+	setbkcolor(RGB(220, 180, 70));
+	outtextxy(1000, 360, s13);
+	_stprintf_s(hong, _T("%d"), W_dead);                                           //把步数数字变成字符，下一步显示字符  
+	outtextxy(1170, 360, hong);
+	_stprintf_s(hong, _T("%d"), B_dead);                                           //把步数数字变成字符，下一步显示字符  
+	outtextxy(1320, 360, hong);
+	FlushBatchDraw();
+	
+	for (x = 1; x <= 19; x++)
+	{	
+		for (y = 1; y <= 19; y++)
+		{
+			/*else if (weizhi[x][y] == 1 && weizhi[x - 1][y] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2)
+			{
+			weizhi[x][y] = 2;
+			adss[i][0] = x*B;
+			adss[i][1] = y*B;
+			SamW_dead += i;
+			getimage(&img, 1020, 60, 40, 40);                                                     ///////////////////观察效果用途
+			putimage(x*B - 20, y*B - 20, &img);                                                   /////////////////////观察效果用途
+			}*/
+			
+				
+
+			 if((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
+				    &&(weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2)
+				    && (weizhi[x - 1][y] != 2 || weizhi[x + 1][y] != 2 || weizhi[x][y - 1] != 2 || weizhi[x][y + 1] != 2))
+				{
+				weizhi[x][y] = 8;
+				adss[i][0] = x*B;
+				adss[i][1] = y*B;
+				i++;
+				//W_dead++;
+				//SamW_dead++;
+				//getimage(&img, 1020, 60, 40, 40);                                ///////////////////观察效果用途
+				//putimage(x*B - 20, y*B - 20, &img);                             /////////////////////观察效果用途
+				_stprintf_s(hong, _T("%d"), 8);                                        //把步数数字变成字符，下一步显示字符  
+				outtextxy(x*B-3, y*B-7, hong);                                  //写步数
+				Eat_more_than_one_w();                                            //////////////////开始递归循环,  对内存监控发现，鼠标不点击，数据一直在跑
+				}
+			
+			 else if ((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
+				 &&
+				 (weizhi[x - 1][y] == 8 || weizhi[x + 1][y] == 8 || weizhi[x][y - 1] == 8 || weizhi[x][y + 1] == 8)
+				 &&
+				 (weizhi[x - 1][y] != 2 || weizhi[x + 1][y] != 2 || weizhi[x][y - 1] != 2 || weizhi[x][y + 1] != 2)
+				 &&
+				 (weizhi[x - 1][y] != 4 && weizhi[x + 1][y] != 4 && weizhi[x][y - 1] != 4 && weizhi[x][y + 1] != 4))
+
+				 {
+				 weizhi[x][y] = 8;
+				 adss[i][0] = x*B;
+				 adss[i][1] = y*B;
+				 //Eat_more_than_one();                                                             //还得再搜索啊
+				 //W_dead++;
+				 //SamW_dead = SamW_dead + W_dead;
+				 exit;
+				
+			 }
+
+			//W_dead = i;
+			//SamW_dead += i;
+			else  if( weizhi[x][y] == 2 && (weizhi[x - 1][y] == 0 || weizhi[x + 1][y] == 0 || weizhi[x][y - 1] == 0 || weizhi[x][y + 1] == 0)
+			        && (weizhi[x - 1][y] ==8 || weizhi[x + 1][y] == 8 || weizhi[x][y - 1] == 8 || weizhi[x][y + 1] == 8))
+				{
+					exit;
+				}
+		}
+	}		
+}
+
+void Eat_more_than_one_b()
+{
+
+}
+
+void chizhi_w()
+{
+	/*for (zong = a / B - 1, heng = b / B; zong >= 1; zong--)
+	{
+		if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+		{
+			getimage(&img, 1020, 60, 40, 40);
+			putimage(zong*B - 20, heng*B - 20, &img);
+			weizhi[zong][heng] = 3;
+			//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+			//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
+			//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+			if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
+			{
+				getimage(&img, 1020, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+			{
+				getimage(&img, 1020, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+			{
+				getimage(&img, 980, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+			{
+				getimage(&img, 1180, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 40)                               //左上角
+			{
+				getimage(&img, 980, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 40)                              //右上角
+			{
+				getimage(&img, 1180, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 760)                             //右下角
+			{
+				getimage(&img, 1180, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 760)
+			{
+				getimage(&img, 980, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+			mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+			mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																										// }
+			_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
+			outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
+
+			W_dead++;
+		}
+	
+	}
+	for (zong = a / B + 1, heng = b / B; zong <= 19; zong++)
+	{
+		if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+		{
+			getimage(&img, 1020, 60, 40, 40);
+			putimage(zong*B - 20, heng*B - 20, &img);
+			weizhi[zong][heng] = 3;
+			//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+			//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
+			//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+			if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
+			{
+				getimage(&img, 1020, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+			{
+				getimage(&img, 1020, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+			{
+				getimage(&img, 980, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+			{
+				getimage(&img, 1180, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 40)                               //左上角
+			{
+				getimage(&img, 980, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 40)                              //右上角
+			{
+				getimage(&img, 1180, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 760)                             //右下角
+			{
+				getimage(&img, 1180, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 760)
+			{
+				getimage(&img, 980, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+			mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+			mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																										// }
+			_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
+			outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
+			W_dead++;
+		}
+		
+	}
 
 	for (heng = b / B - 1; heng >= 1; heng--)
-		for (zong = 1; zong <= 19;zong++)
+		for (zong = 1; zong <= 19; zong++)
+		{
+			if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+			{
+				getimage(&img, 1020, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+				weizhi[zong][heng] = 3;
+				//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+				//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
+				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
+				{
+					getimage(&img, 1020, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+				{
+					getimage(&img, 1020, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+				{
+					getimage(&img, 980, 60, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+				{
+					getimage(&img, 1180, 60, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B == 40)                               //左上角
+				{
+					getimage(&img, 980, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 760 && heng*B == 40)                              //右上角
+				{
+					getimage(&img, 1180, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 760 && heng*B == 760)                             //右下角
+				{
+					getimage(&img, 1180, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B == 760)
+				{
+					getimage(&img, 980, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																											// }
+				_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
+				outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
+
+				W_dead++;
+			}	
+		}
+
+	for (heng = b / B + 1; heng <= 19; heng++)
+		for (zong = 1; zong <= 19; zong++)
 		{
 			if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
 			{
@@ -1423,7 +1591,322 @@ void chizhi()
 
 				W_dead++;
 			}
-			else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
+			
+		}*/
+
+	for (zong = 1; zong <= 19; zong++)
+	{
+		for (heng = 1; heng <= 19; heng++)
+		{
+			if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+			{
+				getimage(&img, 1020, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+				weizhi[zong][heng] = 3;
+				//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+				//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
+				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+				{
+					getimage(&img, 1020, 100, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
+				{
+					getimage(&img, 1020, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+				{
+					getimage(&img, 1020, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+				{
+					getimage(&img, 980, 60, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+				{
+					getimage(&img, 1180, 60, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B == 40)                               //左上角
+				{
+					getimage(&img, 980, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 760 && heng*B == 40)                              //右上角
+				{
+					getimage(&img, 1180, 20, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 760 && heng*B == 760)                             //右下角
+				{
+					getimage(&img, 1180, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				else if (zong*B == 40 && heng*B == 760)
+				{
+					getimage(&img, 980, 180, 40, 40);
+					putimage(zong*B - 20, heng*B - 20, &img);
+				}
+				mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																											// }
+				_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
+				outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
+				W_dead++;
+			}
+			
+			
+		}
+	}
+}
+
+void shuaxin_w() 
+{
+	int x, y;
+	for (x = 19; x >= 1; x--)
+	{
+		for (y = 19; y >= 1; y--)
+		{
+		
+			if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] != 2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2) 
+				&& (weizhi[x - 1][y] != 4 && weizhi[x + 1][y] != 4 && weizhi[x][y - 1] != 4 && weizhi[x][y + 1] != 4))
+					{
+						for (x = 1; x <= 19; x++)
+						{
+							for (y = 1; y <= 19; y++)
+							{
+								if (weizhi[x][y] == 8)
+								{
+									getimage(&img, 1020, 60, 40, 40);                                      ///////////////////观察效果用途
+									putimage(x*B - 20, y*B - 20, &img);                                    //画白棋/////////////////////////////////////////
+									weizhi[x][y] = 0;
+									_stprintf_s(hong, _T("%d"), 0);                                        //把步数数字变成字符，下一步显示字符  
+									outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
+									W_dead++;                                                              //提子数量
+								}
+							}
+						}
+						/*for (int j = 0; j <= i; j++)
+						{
+
+						weizhi[adss[j][0] / B][adss[j][1] / B] = 0;
+						_stprintf_s(hong, _T("%d"), 7);                                               //把步数数字变成字符，下一步显示字符
+						outtextxy(adss[i][0] - 3, adss[i][1] - 7, hong);                              //写步数
+						getimage(&img, 1020, 60, 40, 40);                                             ///////////////////观察效果用途
+						putimage(adss[j][0] - 20, adss[j][1] - 20, &img);                             /////////////////////观察效果用途
+						//FlushBatchDraw();
+						}
+
+						_stprintf_s(hong, _T("%d"), SamW_dead);                                           //把步数数字变成字符，下一步显示字符
+						outtextxy(1150, 360, hong);                                                        //写步数       */
+						luozi();
+						exit;
+
+					}
+			else if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2))
+						{
+						//setlinecolor(WHITE);
+						//setfillcolor(WHITE);
+						//fillcircle(x, y, RQ);                                                  //画白棋/////////////////////////////////////////
+
+							weizhi[x][y] = 2;
+							_stprintf_s(hong, _T("%d"), 2);                                        //把步数数字变成字符，下一步显示字符  
+							outtextxy(x*B - 3, y*B - 7, hong);                                      //写步数
+						}
+		}
+	}	
+}
+
+void shuaxin_b()
+{
+	    /*
+			 if( (weizhi[x][y] == 7) && (weizhi[x - 1][y] == 1 || weizhi[x + 1][y] == 1 || weizhi[x][y - 1] == 1 || weizhi[x][y + 1] == 1))
+					{
+							//setlinecolor(BLACK);
+							//setfillcolor(BLACK);
+							//fillcircle(x, y, RQ);                                                  //画白棋/////////////////////////////////////////
+							weizhi[x][y] = 1;
+							_stprintf_s(hong, _T("%d"), 1);                                        //把步数数字变成字符，下一步显示字符  
+							outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
+					}
+		*/
+}
+
+void chizhi_b()
+{
+
+	/*for (zong = a / B - 1, heng = b / B; zong >= 1; zong--)
+	{
+		
+	          if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
+		{
+			getimage(&img, 1020, 60, 40, 40);
+			putimage(zong*B - 20, heng*B - 20, &img);
+			weizhi[zong][heng] = 4;
+			//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+			//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
+			//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+			if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
+			{
+				getimage(&img, 1020, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+			{
+				getimage(&img, 1020, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+			{
+				getimage(&img, 980, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+			{
+				getimage(&img, 1180, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 40)                               //左上角
+			{
+				getimage(&img, 980, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 40)                              //右上角
+			{
+				getimage(&img, 1180, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 760)                             //右下角                      
+			{
+				getimage(&img, 1180, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 760)
+			{
+				getimage(&img, 980, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+			mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+			mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																										// }
+			_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
+			outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
+
+			B_dead++;
+		}
+	}
+	for (zong = a / B + 1, heng = b / B; zong <= 19; zong++)
+	{
+		
+		      if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
+		{
+			getimage(&img, 1020, 60, 40, 40);
+			putimage(zong*B - 20, heng*B - 20, &img);
+			weizhi[zong][heng] = 4;
+			//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+			//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
+			//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
+			if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
+			{
+				getimage(&img, 1020, 100, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
+			{
+				getimage(&img, 1020, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
+			{
+				getimage(&img, 1020, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
+			{
+				getimage(&img, 980, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
+			{
+				getimage(&img, 1180, 60, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 40)                               //左上角
+			{
+				getimage(&img, 980, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 40)                              //右上角
+			{
+				getimage(&img, 1180, 20, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 760 && heng*B == 760)                             //右下角                      
+			{
+				getimage(&img, 1180, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			else if (zong*B == 40 && heng*B == 760)
+			{
+				getimage(&img, 980, 180, 40, 40);
+				putimage(zong*B - 20, heng*B - 20, &img);
+			}
+			mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
+			mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
+			mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
+																										// }
+			_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
+			outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
+			B_dead++;																					//tizi(a/B ,b/B);     //提掉白死子
+		}
+	}
+
+	for (heng = b / B - 1; heng >= 1; heng--)
+		for (zong = 1; zong <= 19; zong++)
+		{
+			
+			 if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
 			{
 				getimage(&img, 1020, 60, 40, 40);
 				putimage(zong*B - 20, heng*B - 20, &img);
@@ -1497,164 +1980,16 @@ void chizhi()
 		}
 
 	for (heng = b / B + 1; heng <= 19; heng++)
-		for (zong = 1 ; zong <= 19; zong++)
-			{
-				if ((weizhi[zong][heng] == 2) && (weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
-				{
-					getimage(&img, 1020, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-					weizhi[zong][heng] = 3;
-					//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-					//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
-					//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-					if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
-					{
-						getimage(&img, 1020, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-					{
-						getimage(&img, 1020, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-					{
-						getimage(&img, 980, 60, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-					{
-						getimage(&img, 1180, 60, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B == 40)                               //左上角
-					{
-						getimage(&img, 980, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 760 && heng*B == 40)                              //右上角
-					{
-						getimage(&img, 1180, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 760 && heng*B == 760)                             //右下角
-					{
-						getimage(&img, 1180, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B == 760)
-					{
-						getimage(&img, 980, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-					mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-					mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																												// }
-					_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
-					outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
-
-					W_dead++;
-				}
-				else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
-				{
-					getimage(&img, 1020, 60, 40, 40);
-					putimage(zong*B - 20, heng*B - 20, &img);
-					weizhi[zong][heng] = 4;
-					//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-					//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
-					//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
-					if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if ((zong == 4 && heng == 10) || (zong == 10 && heng == 10) || (zong == 16 && heng == 10))
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if ((zong == 4 && heng == 16) || (zong == 10 && heng == 16) || (zong == 16 && heng == 16))
-					{
-						getimage(&img, 1020, 100, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
-					{
-						getimage(&img, 1020, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (heng*B == 760 && zong*B != 40 && zong*B != 760)			 //下边
-					{
-						getimage(&img, 1020, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B != 40 && heng*B != 760)				 //左边
-					{
-						getimage(&img, 980, 60, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B != 40 && heng*B != 760)              //右边
-					{
-						getimage(&img, 1180, 60, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B == 40)                               //左上角
-					{
-						getimage(&img, 980, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 760 && heng*B == 40)                              //右上角
-					{
-						getimage(&img, 1180, 20, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 760 && heng*B == 760)                             //右下角                      
-					{
-						getimage(&img, 1180, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					else if (zong*B == 40 && heng*B == 760)
-					{
-						getimage(&img, 980, 180, 40, 40);
-						putimage(zong*B - 20, heng*B - 20, &img);
-					}
-					mciSendString(_T("close  tzmusic"), NULL, 0, NULL);                                         // 提子声音，先把前面一次的音乐关闭  
-					mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
-					mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
-																												// }
-					_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
-					outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
-					B_dead++;																					//tizi(a/B ,b/B);     //提掉白死子
-				}
-			}
-
-	for (zong = 1; zong <=19; zong++)
-	{
-		for (heng = 1; heng <= 19; heng++)
+		for (zong = 1; zong <= 19; zong++)
 		{
-			if ((weizhi[zong][heng] == 2)  &&( weizhi[zong - 1][heng] == 1 && weizhi[zong + 1][heng] == 1 && weizhi[zong][heng + 1] == 1 && weizhi[zong][heng - 1] == 1))
+			
+			 if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
 			{
 				getimage(&img, 1020, 60, 40, 40);
 				putimage(zong*B - 20, heng*B - 20, &img);
-				weizhi[zong][heng] = 3;
-				//weizhi[a / 40][b / 40] = 7;                          //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
-				//_stprintf_s(bai, _T("%d"), 3);                       //测试记录用，待删除
+				weizhi[zong][heng] = 4;
+				//weizhi[a / 40][b / 40] = 7;                                       //黑如果吃了白一颗子，位置标记过渡一下，防止白立即吃回来
+				//_stprintf_s(bai, _T("%d"), 4);                                   //测试记录用，待删除
 				//outtextxy(zong*B - 3, heng*B - 7, bai);			     //
 				if ((zong == 4 && heng == 4) || (zong == 10 && heng == 4) || (zong == 16 && heng == 4))	                 //假如在星位，需要补画原来白点*
 				{
@@ -1671,7 +2006,7 @@ void chizhi()
 					getimage(&img, 1020, 100, 40, 40);
 					putimage(zong*B - 20, heng*B - 20, &img);
 				}
-				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)			    //上边
+				else if (heng*B == 40 && zong*B != 40 && zong*B != 760)					 //上边
 				{
 					getimage(&img, 1020, 20, 40, 40);
 					putimage(zong*B - 20, heng*B - 20, &img);
@@ -1701,7 +2036,7 @@ void chizhi()
 					getimage(&img, 1180, 20, 40, 40);
 					putimage(zong*B - 20, heng*B - 20, &img);
 				}
-				else if (zong*B == 760 && heng*B == 760)                             //右下角
+				else if (zong*B == 760 && heng*B == 760)                             //右下角                      
 				{
 					getimage(&img, 1180, 180, 40, 40);
 					putimage(zong*B - 20, heng*B - 20, &img);
@@ -1715,11 +2050,18 @@ void chizhi()
 				mciSendString(_T("open ./music/tizi.mp3 alias tzmusic"), NULL, 0, NULL);                    // 打开音乐
 				mciSendString(_T("play tzmusic"), NULL, 0, NULL);                                           // 仅播放一次
 																											// }
-				_stprintf_s(bai, _T("%d"), 3);                                      //测试记录用，待删除
-				outtextxy(zong*B - 3, heng*B - 7, bai);			                    //
-				W_dead++;
+				_stprintf_s(bai, _T("%d"), 4);                                                      //测试记录用，待删除
+				outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
+				B_dead++;																					//tizi(a/B ,b/B);     //提掉白死子
 			}
-			else if (((weizhi[zong][heng] == 1 ) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
+		}     */
+
+	for (zong = 1; zong <= 19; zong++)
+	{
+		for (heng = 1; heng <= 19; heng++)
+		{
+			
+			if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] == 2 && weizhi[zong + 1][heng] == 2 && weizhi[zong][heng + 1] == 2 && weizhi[zong][heng - 1] == 2))
 			{
 				getimage(&img, 1020, 60, 40, 40);
 				putimage(zong*B - 20, heng*B - 20, &img);
@@ -1790,206 +2132,119 @@ void chizhi()
 				outtextxy(zong*B - 3, heng*B - 7, bai);			                                    //
 				B_dead++;											                                       //tizi(a/B ,b/B);     //提掉白死子
 			}
+
+			
 		}
 	}
-}
-
-void jinshou()
-{
-	mciSendString(_T("close jjmusic"), NULL, 0, NULL);                 // 落子声音，先把前面一次的音乐关闭  
-	mciSendString(_T("open ./music/gotEnemy.mp3 alias jjmusic"), NULL, 0, NULL);                                // 打开音乐
-	mciSendString(_T("play jjmusic"), NULL, 0, NULL);                  // 仅播放一次
-}
-
-void pass()
-{
-	mciSendString(_T("close  psmusic"), NULL, 0, NULL);               // 落子声音，先把前面一次的音乐关闭  
-	mciSendString(_T("open ./music/pass.mp3 alias psmusic"), NULL, 0, NULL);                                // 打开音乐
-	mciSendString(_T("play psmusic"), NULL, 0, NULL);                  // 仅播放一次
-}
-
-void Eat_more_than_one()
-{    
-	//int B_dead = 0;																		       //黑子死子数量，每次归1
-	//int W_dead = 0;																		       //白子死子数量，每次归1
-	int x, y;
-	int i=0;
-	//int SamB_dead = 0;																		   //黑子总共死子数量
-	//int W_dead = 0;																		   //黑子总共死子数量
-	TCHAR s13[] = _T("↓当前步数   黑方提子-             白方提子-    ");
-	setbkcolor(RGB(220, 180, 70));
-	outtextxy(1000, 360, s13);
-	_stprintf_s(hong, _T("%d"), W_dead);                                           //把步数数字变成字符，下一步显示字符  
-	outtextxy(1170, 360, hong);
-	_stprintf_s(hong, _T("%d"), B_dead);                                           //把步数数字变成字符，下一步显示字符  
-	outtextxy(1320, 360, hong);
-	FlushBatchDraw();
-	
-	for (x = 1; x <= 19; x++)
-	{	
-		for (y = 1; y <= 19; y++)
-		{
-			/*else if (weizhi[x][y] == 1 && weizhi[x - 1][y] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2)
-			{
-			weizhi[x][y] = 2;
-			adss[i][0] = x*B;
-			adss[i][1] = y*B;
-			SamW_dead += i;
-			getimage(&img, 1020, 60, 40, 40);                                                     ///////////////////观察效果用途
-			putimage(x*B - 20, y*B - 20, &img);                                                   /////////////////////观察效果用途
-			}*/
-			
-				
-
-			 if((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
-				    &&(weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2)
-				    && (weizhi[x - 1][y] != 2 || weizhi[x + 1][y] != 2 || weizhi[x][y - 1] != 2 || weizhi[x][y + 1] != 2))
-				{
-				weizhi[x][y] = 8;
-				adss[i][0] = x*B;
-				adss[i][1] = y*B;
-				i++;
-				//W_dead++;
-				//SamW_dead++;
-				//getimage(&img, 1020, 60, 40, 40);                                ///////////////////观察效果用途
-				//putimage(x*B - 20, y*B - 20, &img);                             /////////////////////观察效果用途
-				_stprintf_s(hong, _T("%d"), 8);                                        //把步数数字变成字符，下一步显示字符  
-				outtextxy(x*B-3, y*B-7, hong);                                  //写步数
-				Eat_more_than_one();                                            //////////////////开始递归循环,  对内存监控发现，鼠标不点击，数据一直在跑
-				}
-			
-			 else if ((weizhi[x][y] == 2 && weizhi[x - 1][y] != 0 && weizhi[x + 1][y] != 0 && weizhi[x][y - 1] != 0 && weizhi[x][y + 1] != 0)
-				 &&
-				 (weizhi[x - 1][y] == 8 || weizhi[x + 1][y] == 8 || weizhi[x][y - 1] == 8 || weizhi[x][y + 1] == 8)
-				 &&
-				 (weizhi[x - 1][y] != 2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2)
-				 &&
-				 (weizhi[x - 1][y] != 4 && weizhi[x + 1][y] != 4 && weizhi[x][y - 1] != 4 && weizhi[x][y + 1] != 4))
-
-				 {
-				 weizhi[x][y] = 8;
-				 adss[i][0] = x*B;
-				 adss[i][1] = y*B;
-				 //Eat_more_than_one();                                                             //还得再搜索啊
-				 //W_dead++;
-				 //SamW_dead = SamW_dead + W_dead;
-				 exit;
-				
-			 }
-
-			//W_dead = i;
-			//SamW_dead += i;
-			else  if( weizhi[x][y] == 2 && (weizhi[x - 1][y] == 0 || weizhi[x + 1][y] == 0 || weizhi[x][y - 1] == 0 || weizhi[x][y + 1] == 0)
-			        && (weizhi[x - 1][y] ==8 || weizhi[x + 1][y] == 8 || weizhi[x][y - 1] == 8 || weizhi[x][y + 1] == 8))
-				{
-					exit;
-				}
-		}
-	}		
-}
-void shuaxin() 
-{
-	int x, y;
-	for (x = 19; x >= 1; x--)
-	{
-		for (y = 19; y >= 1; y--)
-		{
-		
-			if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] != 2 && weizhi[x + 1][y] != 2 && weizhi[x][y - 1] != 2 && weizhi[x][y + 1] != 2))
-					{
-						for (x = 1; x <= 19; x++)
-						{
-							for (y = 1; y <= 19; y++)
-							{
-								if (weizhi[x][y] == 8)
-								{
-									getimage(&img, 1020, 60, 40, 40);                                      ///////////////////观察效果用途
-									putimage(x*B - 20, y*B - 20, &img);                                    //画白棋/////////////////////////////////////////
-									weizhi[x][y] = 0;
-									_stprintf_s(hong, _T("%d"), 0);                                        //把步数数字变成字符，下一步显示字符  
-									outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-									W_dead++;
-								}
-							}
-						}
-						/*for (int j = 0; j <= i; j++)
-						{
-
-						weizhi[adss[j][0] / B][adss[j][1] / B] = 0;
-						_stprintf_s(hong, _T("%d"), 7);                                               //把步数数字变成字符，下一步显示字符
-						outtextxy(adss[i][0] - 3, adss[i][1] - 7, hong);                              //写步数
-						getimage(&img, 1020, 60, 40, 40);                                             ///////////////////观察效果用途
-						putimage(adss[j][0] - 20, adss[j][1] - 20, &img);                             /////////////////////观察效果用途
-						//FlushBatchDraw();
-						}
-
-						_stprintf_s(hong, _T("%d"), SamW_dead);                                           //把步数数字变成字符，下一步显示字符
-						outtextxy(1150, 360, hong);                                                        //写步数       */
-						luozi();
-						exit;
-
-					}
-			else if ((weizhi[x][y] == 8) && (weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2))
-					{
-						//setlinecolor(WHITE);
-						//setfillcolor(WHITE);
-						//fillcircle(x, y, RQ);                                                  //画白棋/////////////////////////////////////////
-
-							weizhi[x][y] = 2;
-							_stprintf_s(hong, _T("%d"), 2);                                        //把步数数字变成字符，下一步显示字符  
-							outtextxy(x*B - 3, y*B - 7, hong);                                      //写步数
-
-					}
-
-			else if( (weizhi[x][y] == 7) && (weizhi[x - 1][y] == 1 || weizhi[x + 1][y] == 1 || weizhi[x][y - 1] == 1 || weizhi[x][y + 1] == 1))
-					{
-							setlinecolor(BLACK);
-							setfillcolor(BLACK);
-							fillcircle(x, y, RQ);                                                //画白棋/////////////////////////////////////////
-							weizhi[x][y] = 1;
-							_stprintf_s(hong, _T("%d"), 1);                                        //把步数数字变成字符，下一步显示字符  
-							outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-					}
-		}
-	}	
 }
 
 void huaxian()
 {
 	int x, y;
 	int r, g, b;
+	
 	setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 1);
 
-		for (x = 1; x <= 19; x++)                                                      //慢速度划线
+	for (x = 1; x <= 19; x++)                                                      //慢速度划线
+	{
+		for (y = 1; y <= 19; y++)
 		{
-			for (y = 1; y <= 19; y++)
-			{
-				//srand((unsigned)time(NULL));
-				r = rand() % 255;
-				g = rand() % 255;
-				b = rand() % 255;
-				setcolor(RGB(r,g,b));
-				line(x * 40, B, x * 40, A);											   //设置线条颜色
-				srand((unsigned)time(NULL));
-				r = rand() % 255;
-				g = rand() % 255;
-				b = rand() % 255;
-				setcolor(RGB(b,g,r));
-				line(B, y * 40, A, y * 40);											   //画纵横十九路
-				Sleep(35);
-				FlushBatchDraw();
-			}
+			srand((unsigned)time(NULL));
+			r = rand() % 255;
+			g = rand() % 255;
+			b = rand() % 255;
+			setcolor(RGB(r, g, b));
+			line(x * 40, B, x * 40, A);											   //设置线条颜色
+			FlushBatchDraw();
+			/*srand((unsigned)time(NULL));
+			r = rand() % 255;
+			g = rand() % 255;
+			b = rand() % 255;
+			setcolor(RGB(b,g,r));
+			line(B, y * 40, A, y * 40);	*/										   //画纵横十九路
+			circle(x*B, y*B, 3);
+			Sleep(T);
+			FlushBatchDraw();
 		}
+	}
 
-		for (x = 1; x <= 19; x++)                                                      //恢复白棋盘
+	for (x = 1; x <= 19; x++)                                                      //恢复白棋盘
+	{
+		for (y = 1; y <= 19; y++)
 		{
-			for (y = 1; y <= 19; y++)
-			{
-				setcolor(RGB(255, 255, 255));											 //设置线条颜色											 
-				line(B, y*40, A, y*40);
-				line(x*40, B, x*40, A);
-			}
+			setcolor(RGB(255, 255, 255));											 //设置线条颜色											 
+			line(B, y * 40, A, y * 40);
+			line(x * 40, B, x * 40, A);
+
+			setlinecolor(RGB(220, 180, 70));
+			circle(x*B, y*B, 3);
 		}
+	}
+
+	for (x = 4; x < 19; x += 6)
+	{
+		for (y = 4; y < 19; y += 6)                                                    //九个星位的点位置
+		{
+			if (weizhi[x][y] == 0) 
+			{
+			setlinecolor(WHITE);
+			setfillcolor(WHITE);
+			fillcircle(x * B, y * B, R);
+			}										   //画九个星位的点，包括天元
+		}
+    }
+}
+
+void dao_pu()
+{
+	int x, y;
+
+			for (x = 1; x <= 19; x++)
+			{
+				for (y = 1; y <= 19; y++)
+				{
+					if((weizhi[x][y] == 2 && (weizhi[x - 1][y] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x][y + 1] == 2))
+						&&( weizhi[x - 1][y] == 4 || weizhi[x + 1][y] == 4 || weizhi[x][y - 1] == 4 || weizhi[x][y + 1] == 4))
+						for (x = 1; x <= 19; x++)
+						
+							for (y = 1; y <= 19; y++)
+							{
+
+								if (weizhi[x][y] == 4)
+								{
+									weizhi[x][y] = 0;
+									_stprintf_s(bai, _T("%d"), 0);                                                      //测试记录用，待删除
+									outtextxy(x*B - 3, y*B - 7, bai);
+								}
+						
+							}
+							                                   
+			
+				}
+			}
+
+			for (x = 1; x <= 19; x++)
+			{
+				for (y = 1; y <= 19; y++)
+				{
+					if ((weizhi[x][y] == 1 && (weizhi[x - 1][y] == 1 || weizhi[x + 1][y] == 1 || weizhi[x][y - 1] == 1 || weizhi[x][y + 1] == 1))
+						&& (weizhi[x - 1][y] == 3 || weizhi[x + 1][y] == 3 || weizhi[x][y - 1] == 3 || weizhi[x][y + 1] == 3))
+						for (x = 1; x <= 19; x++)
+						{
+							for (y = 1; y <= 19; y++)
+							{
+								if (weizhi[x][y] == 3)
+								{
+									weizhi[x][y] = 0;
+									_stprintf_s(bai, _T("%d"), 0);                                                      //测试记录用，待删除
+									outtextxy(x*B - 3, y*B - 7, bai);
+								}
+
+							}
+						}
+
+				}
+			}
 }
 
 	/* if (who == 2)                                                                             //白棋
@@ -2036,7 +2291,8 @@ void huaxian()
 
 					 //return 0;
 				 }
-				 else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] != 0 && weizhi[zong + 1][heng] != 0 && weizhi[zong][heng + 1] != 0 && weizhi[zong][heng - 1] != 0)&& (weizhi[zong - 1][heng] == 1 || weizhi[zong + 1][heng] == 1 || weizhi[zong][heng + 1] == 1 || weizhi[zong][heng - 1] == 1))
+				 else if (((weizhi[zong][heng] == 1) && weizhi[zong - 1][heng] != 0 && weizhi[zong + 1][heng] != 0 && weizhi[zong][heng + 1] != 0 
+				       && weizhi[zong][heng - 1] != 0)&& (weizhi[zong - 1][heng] == 1 || weizhi[zong + 1][heng] == 1 || weizhi[zong][heng + 1] == 1 || weizhi[zong][heng - 1] == 1))
 				 {
 					 addrss[Bsizi][0] = zong;
 					 addrss[Bsizi][1] = heng;
@@ -2048,7 +2304,8 @@ void huaxian()
 					 tizi( x, y,  2);
 					//return 0;
 				 }
-				 else if ((weizhi[zong][heng] == 1) && (weizhi[zong - 1][heng] == 0 || weizhi[zong + 1][heng] == 0 || weizhi[zong][heng + 1] == 0 || weizhi[zong][heng - 1] == 0)
+				 else if ((weizhi[zong][heng] == 1) && (weizhi[zong - 1][heng] == 0 || weizhi[zong + 1][heng] == 0 || weizhi[zong][heng + 1] == 0 
+				     || weizhi[zong][heng - 1] == 0)
 					 || (weizhi[zong - 1][heng] == 3 || weizhi[zong + 1][heng] == 3 || weizhi[zong][heng + 1] == 3 || weizhi[zong][heng - 1] == 3))
 				 {
 					continue;
