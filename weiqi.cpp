@@ -49,8 +49,9 @@ void chizhi_b();
 void no_breath();                                                                       //无气的位置
 int  creat_data();
 void xing_shi_panduan();
-void xiaqi();
-int Q;
+void xiaqi_wt();
+void xiaqi_bk();
+int Q=0;
 
 /********主体函数********主体函数*****************************************************************************************************************************************/
 
@@ -67,16 +68,23 @@ void weiqi()                                                                    
 	BeginBatchDraw();                                                                    //Easy-x画图库函数，画图开始
 	while (1)                                                                            //循环下棋动作
 	{
-		//可以尝试在这个位置实现自动落子功能，比如用随机数的形式生成a/b的值
-		//if(Q!=1)
-		//{
-		//	xiaqi();
-	//	}
-	                          /////实践证明OK
-											  
+		//可以尝试在这个位置实现自动落子功能，比如用随机数的形式生成a/b的值   
+		//要实现网络对战功能，应该也是在这个位置着手，通过socket
+		//以及服务器来交互数据
 
-		shubiao();                                                                       //执行鼠标动作函数,搬到鼠标动作函数内部记录了	
-		if (i % 2 == 0)                                                                  // 黑棋下完后轮到白棋前搜索白棋死活
+		shubiao();                                                                     //执行鼠标动作函数,搬到鼠标动作函数内部记录了
+		if (Q == 2)            //电脑下白棋
+			{
+			Sleep(1000);
+		    xiaqi_wt();     //如果要给程序加上智能落子能力，应该在此函数深化下去，包括训练、棋谱库搜索、价值判断与选点，传入对方上一步坐标给函数，函数自己返回落子位置执行即可//
+			}
+		if (Q == 1)            //切换为电脑下黑棋
+			{
+			Sleep(1000);
+			xiaqi_bk();    
+			}
+
+		if (i % 2 == 0)                                                                      // 黑棋下完后轮到白棋前搜索白棋死活   
 		{
 			chizhi_w();
 			Eat_more_than_one_w();
@@ -96,7 +104,7 @@ void weiqi()                                                                    
 		}
 
 		FlushBatchDraw();
-		Sleep(300);
+		//Sleep(300);
 	/*	if (_kbhit())																   //监控键盘，点击键盘重新游戏
 		{
 			ch = _getch();
@@ -181,21 +189,21 @@ void shubiao()                                                                  
 			}
 	
 	
-
 	MOUSEMSG m;																	       //定义鼠标消息
 	while (MouseHit()  )															   //这个函数用于检测当前是否有鼠标消息
 	{
 		m = GetMouseMsg();
 		if (m.uMsg == WM_LBUTTONDOWN)				                                   //鼠标点击动作，解决禁手问题应该在这里着手，
 		{
-			Q = 1;
+			
 			a = m.x / B*B;														       //圆心坐标，除以40乘以40保证得到40的倍数，消除浮点数
 			b = m.y / B*B; 
 
-			if (m.x >800 && m.x < 1450 && m.y > 400 && m.y <800)                         //PASS按钮
+			if (m.x >800 && m.x < 1100 && m.y > 260 && m.y <600)                         //PASS按钮
 			{
-				i++;
-				pass();
+				Q = 1;                                            /////////////////////////////////////////
+				//i++;
+				//pass();
 				
 					/*	for (x = 1; x < 20; x++)                                          //打劫禁手处理,前手对方的落子，在本次下完后恢复对应值，下次能被吃
 						{
@@ -217,6 +225,13 @@ void shubiao()                                                                  
 						}
 						//jinshou();
 					 */
+			}
+
+			if (m.x > 1150 && m.x < 1400 && m.y > 260 && m.y < 320)                         //PASS按钮
+			{
+				Q = 2;                                            /////////////////////////////////////////
+				//i++;
+				//pass();
 			}
 
 			else if (m.x >1240 && m.x < 1300 && m.y > 40 && m.y <60)                         //形势
@@ -246,7 +261,7 @@ void shubiao()                                                                  
 						continue;
 					}
 
-			else if (m.x > 1300 && m.x < 1340 && m.y > 40 && m.y < 80)                        //退出按钮                       
+			else if (m.x > 1300 && m.x < 1340 && m.y > 40 && m.y < 80)                         //退出按钮                       
 			{
 				
 				i = 1;
@@ -257,7 +272,7 @@ void shubiao()                                                                  
 					{
 						weizhi[m][n] = { 0 };
 					}
-				mciSendString(_T("close  bkmusic"), NULL, 0, NULL);                       //按d关闭音乐
+				mciSendString(_T("close  bkmusic"), NULL, 0, NULL);                      
 				cleardevice();
 				//fflush(stdout);
 				closegraph();
@@ -416,6 +431,7 @@ void shubiao()                                                                  
 		**************************************************************************************************************/
 		else if (m.uMsg == WM_RBUTTONDOWN)                                              //鼠标右键按下，悔棋
 		{
+			Q = 0;                                                                      //关闭计算机自动落子
 			if (i % 2 == 1)
 			{
 				weizhi[bai1[wt-1 ] / 40][bai2[wt-1 ] / 40] = 0;                           //点击时记步子变量i已经增加，故上一步要-1;
@@ -437,6 +453,7 @@ void shubiao()                                                                  
 				jinshou();
 			}
 			T = T + 5;
+
 			FlushBatchDraw();
 
 		}
@@ -501,8 +518,8 @@ void huitu()                                                                    
 		TCHAR s1[] = _T(" 功能说明: C语言 + EASY-X 图形界面做的围棋游戏：");
 		TCHAR s2[] = _T(" (1)、在棋盘上交叉点点击鼠标落子，位置偶尔不准;");
 		TCHAR s3[] = _T(" (2)、黑白交替落子;");
-		TCHAR s4[] = _T(" (3)、右键悔棋;");
-		TCHAR s5[] = _T(" (4)、按空格键复盘；");
+		TCHAR s4[] = _T(" (3)、右键悔棋，停止电脑走棋 ");
+		TCHAR s5[] = _T(" (4)、电脑走黑棋      电脑走白棋");
 		TCHAR s6[] = _T(" (5)、彩蛋位置：变电所");
 		TCHAR s7[] = _T(" (6)、按a键恢复音乐，d暂停；");
 		TCHAR s8[] = _T(" 形式");
@@ -1126,152 +1143,238 @@ void xing_shi_panduan()
 	FlushBatchDraw();
 }
 
-void xiaqi()
+void xiaqi_wt()
 {
-	// srand((unsigned)time(NULL));
+	 srand((unsigned)time(NULL));
 	 a = (rand() % 20) * B;
 	 b = (rand() % 20) * B;
 
 	if (a >= 40 && a <= 760 && b >= 40 && b <= 760)                             //记录位置状态,有棋子则实现禁手
 	{
-		if (i % 2 == 0 && weizhi[a / B][b / B] == 0 && a != da_jie[1][0] * 40 && b != da_jie[1][1] * 40)
-		{
-			//da_jie[1][0] = 0;                                                      //打劫的位置复位
-			//da_jie[1][1] = 0;
-			//白棋行动，轮流下棋算法，步数除以2的余数，只有0或1，对应两个玩家
-			//bai1[wt] = a;                                                      //白棋横坐标
-		//	bai2[wt] = b;													   //白棋纵坐标 
-			//wt++;
-			weizhi[a / 40][b / 40] = 2;                                        //记录位置的状态，0为没有棋子，1为有红棋子，2为有白色棋子
+				if (i % 2 == 0 && weizhi[a / B][b / B] == 0 && a != da_jie[1][0] * 40 && b != da_jie[1][1] * 40)
+				{
+					da_jie[1][0] = 0;                                                      //打劫的位置复位
+					da_jie[1][1] = 0;
+					//白棋行动，轮流下棋算法，步数除以2的余数，只有0或1，对应两个玩家
+					bai1[wt] = a;                                                      //白棋横坐标
+					bai2[wt] = b;													   //白棋纵坐标 
+					wt++;
+					weizhi[a / 40][b / 40] = 2;                                        //记录位置的状态，0为没有棋子，1为有红棋子，2为有白色棋子
 
-			setlinecolor(WHITE);
-			setfillcolor(WHITE);
-			fillcircle(a, b, RQ);
-			//setbkcolor(WHITE);												   //文字背景   
-			//settextcolor(BLACK);                                               //文字颜色
-																			   //_stprintf_s(bai, _T("%d"), i);                                   //把步数数字变成字符，下一步显示字符 
-		//	_stprintf_s(bai, _T("%d"), 2);                                     //////
-																			   //if (i >= 10)
-																			   //	x = 7;
-		//	outtextxy(a - 3, b - 7, bai);                                      //写白棋步数
+					setlinecolor(WHITE);
+					setfillcolor(WHITE);
+					fillcircle(a, b, RQ);
+					setbkcolor(WHITE);												   //文字背景   
+					settextcolor(BLACK);                                               //文字颜色
+																					   //_stprintf_s(bai, _T("%d"), i);                                   //把步数数字变成字符，下一步显示字符 
+					_stprintf_s(bai, _T("%d"), 2);                                     //////
+																					   //if (i >= 10)
+																					   //	x = 7;
+					outtextxy(a - 3, b - 7, bai);                                      //写白棋步数
 
-			for (y = 0; y <= 20; y++)                                //棋盘外围一圈赋值，切换为落子方
-			{
-				weizhi[y][0] = 2;
-			}
-			for (y = 0; y <= 20; y++)
-			{
-				weizhi[y][20] = 2;
-			}
-			for (x = 0; x <= 20; x++)
-			{
-				weizhi[0][x] = 2;
-			}
-			for (x = 0; x <= 20; x++)
-			{
-				weizhi[20][x] = 2;
-			}
+					for (y = 0; y <= 20; y++)                                //棋盘外围一圈赋值，切换为落子方
+					{
+						weizhi[y][0] = 2;
+					}
+					for (y = 0; y <= 20; y++)
+					{
+						weizhi[y][20] = 2;
+					}
+					for (x = 0; x <= 20; x++)
+					{
+						weizhi[0][x] = 2;
+					}
+					for (x = 0; x <= 20; x++)
+					{
+						weizhi[20][x] = 2;
+					}
 
-		/*	setlinecolor(WHITE);
-			setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
-			line(30, 30, 770, 30);
-			line(30, 770, 770, 770);
-			line(30, 30, 30, 770);
-			line(770, 30, 770, 770);
+					setlinecolor(WHITE);
+					setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
+					line(30, 30, 770, 30);
+					line(30, 770, 770, 770);
+					line(30, 30, 30, 770);
+					line(770, 30, 770, 770);
 
-			line(990, 30, 990, 210);
-			line(990, 30, 1210, 30);
-			line(1210, 30, 1210, 210);
-			line(990, 210, 1210, 210);
-
-
-			TCHAR s13[] = _T("下一手：黑棋");
-			setbkcolor(RGB(220, 180, 70));
-			outtextxy(1000, 400, s13);
-			setlinecolor(BLACK);
-			setfillcolor(BLACK);
-			fillcircle(1120, 410, 10);
-			_stprintf_s(hong, _T("%d"), i);
-			settextcolor(WHITE);
-			outtextxy(1000, 380, hong);*/
-
-		//	luozi();
-			i++;
-			//huaxian();                                                                   /////////////////////////////////////
+					line(990, 30, 990, 210);
+					line(990, 30, 1210, 30);
+					line(1210, 30, 1210, 210);
+					line(990, 210, 1210, 210);
 
 
-		}
+					TCHAR s13[] = _T("下一手：黑棋");
+					setbkcolor(RGB(220, 180, 70));
+					outtextxy(1000, 400, s13);
+					setlinecolor(BLACK);
+					setfillcolor(BLACK);
+					fillcircle(1120, 410, 10);
+					_stprintf_s(hong, _T("%d"), i);
+					settextcolor(WHITE);
+					outtextxy(1000, 380, hong);
+
+					luozi();
+					i++;
+					//huaxian();                                                                   /////////////////////////////////////
+
+
+				}
+
 		/****边线提子大概思路是将外围扩大一路，即纵横第二十路，全部赋值为5，计算的时候直接调用就行，总表数据是从0到800，单独用一个二维数组表示***/
 		/****四个角暂时还没有处理***************************************************************************************************************/
-
-		else if (i % 2 == 1 && weizhi[a / B][b / B] == 0 && a != da_jie[1][0] * 40 && b != da_jie[1][1] * 40)
-			//黑棋行动
+		/*if(Q==0)
 		{
-			//da_jie[1][0] = 0;
-			//da_jie[1][1] = 0;
-
-			//hei1[bk] = a;                                                       //黑棋横坐标
-			//hei2[bk] = b;                                                       //黑棋纵坐标 
-			//bk++;
-
-			weizhi[a / 40][b / 40] = 1;                                        //记录位置的状态，1为有黑棋子，0为没有棋子，2为有白色棋子
-
-			setlinecolor(RGB(30, 30, 30));
-			setfillcolor(RGB(30, 30, 30));
-			fillcircle(a, b, RQ);
-
-
-			//setbkcolor(RGB(30, 30, 30));									   //文字背景   
-		//	settextcolor(WHITE);                                               //文字颜色
-																			   //_stprintf_s(hong, _T("%d"), i);                                  //把步数数字变成字符，下一步显示字符 
-		//	_stprintf_s(hong, _T("%d"), 1);
-			//if (i >= 10)
-			//	x = 7;
-		//	outtextxy(a - 3, b - 7, hong);                         //写黑棋步数
-			for (y = 0; y <= 20; y++)                                      //棋盘外围一圈赋值，切换为落子方
+			/*else if (i % 2 == 1 && weizhi[a / B][b / B] == 0 && a != da_jie[1][0] * 40 && b != da_jie[1][1] * 40)
+			//黑棋行动
 			{
-				weizhi[y][0] = 1;
-			}
-			for (y = 0; y <= 20; y++)
-			{
-				weizhi[y][20] = 1;
-			}
-			for (x = 0; x <= 20; x++)
-			{
-				weizhi[0][x] = 1;
-			}
-			for (x = 0; x <= 20; x++)
-			{
-				weizhi[20][x] = 1;
-			}
-		/*	setlinecolor(BLACK);
-			setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
-			line(30, 30, 770, 30);
-			line(30, 770, 770, 770);
-			line(30, 30, 30, 770);
-			line(770, 30, 770, 770);
+				da_jie[1][0] = 0;
+				da_jie[1][1] = 0;
 
-			line(990, 30, 990, 210);
-			line(990, 30, 1210, 30);
-			line(1210, 30, 1210, 210);
-			line(990, 210, 1210, 210);
+				hei1[bk] = a;                                                       //黑棋横坐标
+				hei2[bk] = b;                                                       //黑棋纵坐标 
+				bk++;
 
-			TCHAR s13[] = _T("下一手：白棋");
-			setbkcolor(RGB(220, 180, 70));
-			outtextxy(1000, 400, s13);
-			setlinecolor(WHITE);
-			setfillcolor(WHITE);
-			fillcircle(1120, 410, 10);
-			_stprintf_s(hong, _T("%d"), i);
-			settextcolor(BLACK);
-			outtextxy(1000, 380, hong);*/
+				weizhi[a / 40][b / 40] = 1;                                        //记录位置的状态，1为有黑棋子，0为没有棋子，2为有白色棋子
 
-		//	luozi();
-			i++;
-			//huaxian();   
-		}
+				setlinecolor(RGB(30, 30, 30));
+				setfillcolor(RGB(30, 30, 30));
+				fillcircle(a, b, RQ);
+
+
+				setbkcolor(RGB(30, 30, 30));									   //文字背景   
+				settextcolor(WHITE);                                               //文字颜色
+																				   //_stprintf_s(hong, _T("%d"), i);                                  //把步数数字变成字符，下一步显示字符 
+				_stprintf_s(hong, _T("%d"), 1);
+				//if (i >= 10)
+				//	x = 7;
+				outtextxy(a - 3, b - 7, hong);                         //写黑棋步数
+				for (y = 0; y <= 20; y++)                                      //棋盘外围一圈赋值，切换为落子方
+				{
+					weizhi[y][0] = 1;
+				}
+				for (y = 0; y <= 20; y++)
+				{
+					weizhi[y][20] = 1;
+				}
+				for (x = 0; x <= 20; x++)
+				{
+					weizhi[0][x] = 1;
+				}
+				for (x = 0; x <= 20; x++)
+				{
+					weizhi[20][x] = 1;
+				}
+				setlinecolor(BLACK);
+				setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
+				line(30, 30, 770, 30);
+				line(30, 770, 770, 770);
+				line(30, 30, 30, 770);
+				line(770, 30, 770, 770);
+
+				line(990, 30, 990, 210);
+				line(990, 30, 1210, 30);
+				line(1210, 30, 1210, 210);
+				line(990, 210, 1210, 210);
+
+				TCHAR s13[] = _T("下一手：白棋");
+				setbkcolor(RGB(220, 180, 70));
+				outtextxy(1000, 400, s13);
+				setlinecolor(WHITE);
+				setfillcolor(WHITE);
+				fillcircle(1120, 410, 10);
+				_stprintf_s(hong, _T("%d"), i);
+				settextcolor(BLACK);
+				outtextxy(1000, 380, hong);
+
+				luozi();
+				i++;
+				//huaxian();   
+			}
+		}*/
+		
 	}
 
 	FlushBatchDraw();													             //保持前面图形，增加刷新内容	
                                   /////////////////////////////////////////////////////
+}
+
+void xiaqi_bk()
+{
+	srand((unsigned)time(NULL));
+	a = (rand() % 20) * B;
+	b = (rand() % 20) * B;
+
+	if (a >= 40 && a <= 760 && b >= 40 && b <= 760)                             //记录位置状态,有棋子则实现禁手
+	{
+		if (i % 2 == 1 && weizhi[a / B][b / B] == 0 && a != da_jie[1][0] * 40 && b != da_jie[1][1] * 40)
+		//黑棋行动
+		{
+		da_jie[1][0] = 0;
+		da_jie[1][1] = 0;
+
+		hei1[bk] = a;                                                       //黑棋横坐标
+		hei2[bk] = b;                                                       //黑棋纵坐标
+		bk++;
+
+		weizhi[a / 40][b / 40] = 1;                                        //记录位置的状态，1为有黑棋子，0为没有棋子，2为有白色棋子
+
+		setlinecolor(RGB(30, 30, 30));
+		setfillcolor(RGB(30, 30, 30));
+		fillcircle(a, b, RQ);
+
+
+		setbkcolor(RGB(30, 30, 30));									   //文字背景
+		settextcolor(WHITE);                                               //文字颜色
+		//_stprintf_s(hong, _T("%d"), i);                                  //把步数数字变成字符，下一步显示字符
+		_stprintf_s(hong, _T("%d"), 1);
+		//if (i >= 10)
+		//	x = 7;
+		outtextxy(a - 3, b - 7, hong);                         //写黑棋步数
+		for (y = 0; y <= 20; y++)                                      //棋盘外围一圈赋值，切换为落子方
+		{
+		weizhi[y][0] = 1;
+		}
+		for (y = 0; y <= 20; y++)
+		{
+		weizhi[y][20] = 1;
+		}
+		for (x = 0; x <= 20; x++)
+		{
+		weizhi[0][x] = 1;
+		}
+		for (x = 0; x <= 20; x++)
+		{
+		weizhi[20][x] = 1;
+		}
+		setlinecolor(BLACK);
+		setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 3);
+		line(30, 30, 770, 30);
+		line(30, 770, 770, 770);
+		line(30, 30, 30, 770);
+		line(770, 30, 770, 770);
+
+		line(990, 30, 990, 210);
+		line(990, 30, 1210, 30);
+		line(1210, 30, 1210, 210);
+		line(990, 210, 1210, 210);
+
+		TCHAR s13[] = _T("下一手：白棋");
+		setbkcolor(RGB(220, 180, 70));
+		outtextxy(1000, 400, s13);
+		setlinecolor(WHITE);
+		setfillcolor(WHITE);
+		fillcircle(1120, 410, 10);
+		_stprintf_s(hong, _T("%d"), i);
+		settextcolor(BLACK);
+		outtextxy(1000, 380, hong);
+
+		luozi();
+		i++;
+		//huaxian();
+		}
+	
+
+	}
+
+	FlushBatchDraw();													             //保持前面图形，增加刷新内容	
+																					 /////////////////////////////////////////////////////
 }
