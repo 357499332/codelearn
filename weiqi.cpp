@@ -23,17 +23,20 @@ int count_bk;
 static int B_dead=0;																   //黑子死子数量，每次归1
 static int W_dead=0;																   //白子死子数量，每次归1
 int buff;                                                                              //网络对战位置数据传输变量
-int buffer;
+int buffer[200];
+char zuobiao[20];
+//char *zb;
 
 int Q = 0;
 int ch;                                                                                //记录按键
 int T = 25;                                                                             //////////////////////////
 TCHAR bai[100];
 TCHAR hong[100];                                                                        //存储步数字符，显示棋子步数
+
 IMAGE img;
 
 void huitu();																	       //绘制界面
-int shubiao();                                                                        //鼠标动作与结果
+char * shubiao();                                                                      //鼠标动作与结果
 int  main();
 void luozi();                                                                          //落子声音
 void tizi();
@@ -53,19 +56,15 @@ void chizhi_b();
 void no_breath();                                                                       //无气的位置
 void creat_data();
 int  *read_data();
+void  save();
 void fu_pan();
-
 void xing_shi_panduan();
 void xiaqi_wt();
 void xiaqi_bk();
-
 int client();
 int jieshou();
 void go_online_wt();
 void go_online_bk();
-
-
-
 
 /********主体函数********主体函数*****************************************************************************************************************************************/
 
@@ -86,9 +85,7 @@ void weiqi()                                                                    
 	BeginBatchDraw();                                                                    //Easy-x画图库函数，画图开始
 	while (1)                                                                            //循环下棋动作
 	{
-		//可以尝试在这个位置实现自动落子功能，比如用随机数的形式生成a/b的值                                                                    
-	     //go_online_wt();   //////////////////////////////////////////////////
-		 // go_online_bk();   //////////////////////////////////////////////////         //通过客户端函数输出落子坐标
+		//可以尝试在这个位置实现自动落子功能，比如用随机数的形式生成a/b的值   初步实现                                                                  
 		if (Q == 2)            //电脑下白棋
 			{
 			Sleep(100);
@@ -116,8 +113,8 @@ void weiqi()                                                                    
 			SHA_bk();
 
 			}
-		shubiao();
-		if (i % 2 == 0)                                                                   // 黑棋下完后轮到白棋前搜索白棋死活   
+		shubiao();             ////////////////////////////////////////////////////////////////////////////////
+		if (i % 2 == 0)                                                                   // 黑棋下完后轮到白棋前搜索白棋死活   还是要研究禁手算法，不入和倒扑棋型
 		{
 			chizhi_w();
 			Eat_more_than_one_w();
@@ -127,6 +124,7 @@ void weiqi()                                                                    
 			Eat_more_than_one_b();
 			shuaxin_b();
 			SHA_bk();
+			
 		}
 		if (i % 2 == 1)                                                                    //白棋下完之后针对黑棋搜索  
 		{
@@ -136,10 +134,12 @@ void weiqi()                                                                    
 			SHA_bk();
 			chizhi_w();
 			Eat_more_than_one_w();
-			shuaxin_w();
+			shuaxin_w();                                                                  //方向刷新，放在鼠标动作前面
 			SHA_wt();
 		}
 
+		//go_online_wt();   //////////////////////////////////////////////////
+	   // go_online_bk();   //////////////////////////////////////////////////         //通过客户端函数输出落子坐标
 		FlushBatchDraw();
 		if (_kbhit())																   //监控键盘，点击键盘重新游戏
 		{
@@ -203,7 +203,7 @@ void weiqi()                                                                    
 }
 /****************************************************************************************************************************************************************************/
 
-int shubiao()                                                                          //行棋主体算法函数，处理鼠标动作
+char *shubiao()                                                                          //行棋主体算法函数，处理鼠标动作
 {
 	int n = 3;
 	for (y = 0; y <= 20; y++)                                                 //棋盘外围一圈赋值，计算边线落子吃子情况
@@ -316,13 +316,18 @@ int shubiao()                                                                   
 				
 			}
 
-			else if (m.x > 1350 && m.x < 1420 && m.y > 40 && m.y < 80)                    //复盘按钮                       
+			else if (m.x > 1350 && m.x < 1400 && m.y > 40 && m.y < 80)                    //复盘按钮                       
 			{
 
 					fu_pan();
 	
 			}
+			else if (m.x > 1400 && m.x < 1450 && m.y > 40 && m.y < 80)                    //保存棋谱                       
+			{
 
+			    	save();
+
+			}
 			else
 			{
 				if (a >= 40 && a <= 760 && b >= 40 && b <= 760)                             //记录位置状态,有棋子则实现禁手
@@ -337,6 +342,8 @@ int shubiao()                                                                   
 						wt++;
 						weizhi[a / 40][b / 40] = 2;                                        //记录位置的状态，0为没有棋子，1为有红棋子，2为有白色棋子
 						buff = (a * 10000 + b + 2);                                        //这个数据的格式决定了棋谱的记录和读取可能性  白棋尾数加2
+						buffer[i] = buff;
+						itoa(buff,zuobiao,10);                       /////整数转字符串
 						creat_data();                                                      //每次循环记录步数信息
 						
 									setlinecolor(WHITE);
@@ -410,6 +417,8 @@ int shubiao()                                                                   
 						weizhi[a / 40][b / 40] = 1;                                        //记录位置的状态，1为有黑棋子，0为没有棋子，2为有白色棋子
 					
 						buff = (a * 10000 + b  + 1);                                          //这个数据的格式决定了棋谱的记录和读取可能性  黑棋尾数加1
+						buffer[i] = buff;
+						itoa(buff, zuobiao, 10);                     //////////////////整数转字符串
 						creat_data();                                                             //每次循环记录步数信息
 
 						setlinecolor(RGB(30, 30, 30));
@@ -480,30 +489,26 @@ int shubiao()                                                                   
 			Q = 0;                                                                      //关闭计算机自动落子
 			if (i % 2 == 1)
 			{
-				weizhi[bai1[wt-1 ] / 40][bai2[wt-1 ] / 40] = 0;                           //点击时记步子变量i已经增加，故上一步要-1;
+				weizhi[bai1[wt-1 ] / 40][bai2[wt-1 ] / 40] = 0;                         //点击时记步子变量i已经增加，故上一步要-1;
 				getimage(&img, 1020, 60, 40, 40);                                       //悔棋、消除棋子后得补上十字
-				putimage(bai1[wt-1 ] - 20, bai2[wt-1 ] - 20, &img);                       //需要取得刚才棋子的坐标
+				putimage(bai1[wt-1 ] - 20, bai2[wt-1 ] - 20, &img);                     //需要取得刚才棋子的坐标
 
 				jinshou();
-				i--;
-				
+				i--;	
 			}
 			else if (i % 2 == 0)
 			{
 				weizhi[hei1[bk-1 ] / 40][hei2[bk-1 ] / 40] = 0;
 
 				getimage(&img, 1020, 60, 40, 40);                                       //悔棋、消除棋子后得补上十字
-				putimage(hei1[bk-1] - 20, hei2[bk-1] - 20, &img);                         //需要取得刚才棋子的坐标
+				putimage(hei1[bk-1] - 20, hei2[bk-1] - 20, &img);                       //需要取得刚才棋子的坐标
 
 				i--;
 				jinshou();
 			}
 			T = T + 5;
-
 			FlushBatchDraw();
-
 		}
-	
 	     /********************************************************************************************************************
 			*棋盘边缘老是线出头
 			*试一试笨办法，跟补画星位点一样，每次补画外围背景。
@@ -512,10 +517,10 @@ int shubiao()                                                                   
 			*最后用对应截图覆盖就行
 			*简单的事情有许多方法可以完成，但是最终用朴素的方法就好了
 			*因此搞清楚问题的本质很重要，集中在问题的点，而不是通过其他方法把问题盖掉，计算量增加很多不说，还引起未知错误
-		
 		**********************************************************************************************************************/
 	}
-	return  buff ;
+	//zb = zuobiao;
+	return  zuobiao;
 }
 
 void huitu()                                                                           //图形界面绘制
@@ -570,7 +575,7 @@ void huitu()                                                                    
 		TCHAR s6[] = _T(" (5)、彩蛋位置：变电所");
 		TCHAR s7[] = _T(" (6)、按a键恢复音乐，d暂停；");
 		TCHAR s8[] = _T(" 形式");
-		TCHAR s9[] = _T(" 退出      复盘");
+		TCHAR s9[] = _T(" 退出      复盘      保存");
 		TCHAR s10[] = _T("A        B       C        D       E        F       G        H         I        J        K        L        M       N       O        P        Q       R        S ");
 		CHAR s11[] = "1234567891111111111";
 		CHAR s12[] = "0123456789";
@@ -582,7 +587,6 @@ void huitu()                                                                    
 		outtextxy(1000, 240, s2);
 		outtextxy(1000, 260, s3);
 		outtextxy(1000, 280, s4);
-		
 		outtextxy(1000, 320, s6);
 		outtextxy(1000, 340, s7);
 		outtextxy(1240, 40, s8);
@@ -637,16 +641,12 @@ int jia_yan_b(int x ,int y)
 	{
 		for (int n = 1; n <= 19; n++)
 		{
-			
-			 if ((weizhi[x][y] == 1)
-				&& (weizhi[x - 1][y] == 2 && weizhi[x][y - 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y + 1] == 0)
-				|| (weizhi[x][y - 1] == 2 && weizhi[x][y + 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x - 1][y] == 0)
-				|| (weizhi[x - 1][y] == 2 && weizhi[x][y + 1] == 2 && weizhi[x][y - 1] == 2 && weizhi[x + 1][y] == 0)
-				|| (weizhi[x - 1][y] == 2 && weizhi[x][y + 1] == 2 && weizhi[x + 1][y] == 2 && weizhi[x][y - 1] == 0))
-				{
-					return 1;
-				}
-
+			if (weizhi[x][y] == 1 && (weizhi[x - 1][y] == 1 || weizhi[x][y - 1] == 1 || weizhi[x + 1][y] == 1 || weizhi[x][y + 1] == 1))
+			{
+				return 1;
+			}
+			else
+				return 0;
 		}
 	}
 }
@@ -657,15 +657,12 @@ int jia_yan_w(int x, int y)
 	{
 		for (int n = 1; n <= 19; n++)
 		{
-			if ((weizhi[x][y] == 2)
-				&& (weizhi[x - 1][y] == 1 && weizhi[x][y - 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x][y + 1] == 0)
-				|| (weizhi[x][y - 1] == 1 && weizhi[x][y + 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x - 1][y] == 0)
-				|| (weizhi[x - 1][y] == 1 && weizhi[x][y + 1] == 1 && weizhi[x][y - 1] == 1 && weizhi[x + 1][y] == 0)
-				|| (weizhi[x - 1][y] == 1 && weizhi[x][y + 1] == 1 && weizhi[x + 1][y] == 1 && weizhi[x][y - 1] == 0))
+			if (weizhi[x][y] == 2&& (weizhi[x - 1][y] == 2 || weizhi[x][y - 1] == 2 || weizhi[x + 1][y] == 2 || weizhi[x][y + 1] == 2))	
 			{
 				return 1;
 			}
-
+			else
+				return 0;
 		}
 	}
 }
@@ -851,8 +848,8 @@ void chizhi_w()
 		}
 	}
 	
-	//FlushBatchDraw();
-	if (jia_yan_w(a / B, b / B))
+	FlushBatchDraw();
+	if (jia_yan_w(a / B, b / B)==1)
 	{
 		da_jie[1][0] = 0;
 		da_jie[1][1] = 0;
@@ -939,10 +936,10 @@ void chizhi_b()
 
 			
 		}
-		//tizi();
-		//FlushBatchDraw();
+		
+		FlushBatchDraw();
 	}
-	if (jia_yan_b(a / B, b / B))
+	if (jia_yan_b(a / B, b / B)==1)
 	{
 		da_jie[1][0] = 0;
 		da_jie[1][1] = 0;
@@ -1094,7 +1091,6 @@ int *read_data()
 		printf("File cannot open! ");
 		return 0;
 	}
-
 	while (!feof(fp))   //读文件，直到文件末尾
 	{
 		ch = fgetc(fp);  //将文件内容附给flag
@@ -1109,57 +1105,84 @@ int *read_data()
 		b_in[k] = a_in[i];  //将读到的每一行的数据都保存到b_in数组中
 		k++;                //行数加一
 	}
+	b_in[0] = sum_row;       //第一个数用了记录步数
 	fclose(fp);
-	return  b_in;        //返回数组指针
+	return   b_in;          //返回数组指针
 	
+}
+
+void save()
+{
+	fopen_s(&fp, "./data/qipu.txt", "w+");
+
+	for (int m = 1; m <= i;m++)
+	{
+		fprintf(fp, "%d\n", buffer[m]);
+	}
+	fclose(fp);
+
+
 }
 
 void fu_pan()
 {
-	int *p;
-	i = 1;
-	bk = 0;
-	wt = 0;
+	int *p;																		  //记录读棋谱返回的数组首地址
+	int bs;																		  //记录棋谱的步数
+	int fu_bk_x[100];                                                      
+	int fu_bk_y[100];
+	int fu_wt_x[100];
+	int fu_wt_y[100];
 	for (int m = 0; m < 21; m++)
 		for (int n = 0; n < 21; n++)
 		{
 			weizhi[m][n] = { 0 };
 		}
-	setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 0.5);
-	huitu();
-	p = read_data();
+		setlinestyle(PS_SOLID | PS_JOIN_BEVEL, 0.5);
+
+		huitu();
+		p = read_data();														 //读棋谱文件
+
+	for (int m = 0; m < *p; m++)
+	{
+		printf("%d\n", *(p + m));												  //成功读到保存的数据   
+	}
+		bs = *(p+0);														      //步数必须得导出来,即数组第一个值
+	for (bk = 1; bk <= bs /2; bk++)         
+	{
+		fu_bk_x[bk] = *(p + 2 * bk - 1) / 10000;
+		fu_bk_y[bk] = *(p + 2 * bk - 1) % 1000;
+
+		fu_wt_x[bk] = *(p + 2 * bk) / 10000;
+		fu_wt_y[bk] = *(p + 2 * bk) % 1000;
+	}
 	
-	printf("%d\n", *(p + 1));
-	printf("%d\n", *(p + 2));
-	printf("%d\n", *(p + 2));
-	printf("%d\n", *(p + 3));
-	printf("%d\n", *(p + 4));
+	for (int m = 1; m <= bs /2; m++)
+	{
+		setlinecolor(RGB(30, 30, 30));                                           //设置线条颜色
+		setfillcolor(RGB(30, 30, 30));
+		fillcircle(fu_bk_x[m], fu_bk_y[m], RQ);                                  //画棋子    
+		setbkcolor(BLACK);														 //文字背景   
+		settextcolor(WHITE);													 //文字颜色
+		_stprintf_s(bai, _T("%d"), 1);											 //把步数数字变成字符，下一步显示字符 
+		outtextxy(fu_bk_x[m] - 3, fu_bk_y[m] - 7, bai);                                //写白棋步数
+		luozi();
+		FlushBatchDraw();                                                       //永远的刷新，否则就是等待很久，然后一次刷新
+		Sleep(1000);
+
+		setlinecolor(WHITE);                                                     //设置线条颜色
+		setfillcolor(WHITE);
+		fillcircle(fu_wt_x[m], fu_wt_y[m], RQ);								     //画棋子    
+		setbkcolor(WHITE);														 //文字背景   
+		settextcolor(BLACK);
+		_stprintf_s(bai, _T("%d"), 2);											 //把步数数字变成字符，下一步显示字符 
+		outtextxy(fu_wt_x[m] - 3, fu_wt_y[m] - 7, bai);											 //写白棋步数
+		luozi();
+		
+		FlushBatchDraw();                                                       //永远的刷新，否则就是等待很久，然后一次刷新
+		Sleep(1000);
+	}
 	
-	hei1[0] = *(p + 1) / 10000;
-	hei2[0] = *(p + 1) % 1000;
-	bk = *(p + 2) / 10000;
-	wt = *(p + 2) % 1000;
-	setlinecolor(RGB(30, 30, 30));                                           //设置线条颜色
-	setfillcolor(RGB(30, 30, 30));
-	fillcircle(hei1[0], hei2[0], RQ);                                        //画棋子    
-	setbkcolor(BLACK);														 //文字背景   
-	settextcolor(WHITE);													 //文字颜色
-	_stprintf_s(bai, _T("%d"), 1);											 //把步数数字变成字符，下一步显示字符 
-	outtextxy(hei1[0] - 3, hei2[0] - 7, bai);                                //写白棋步数
-	luozi();
-	i++;
-	FlushBatchDraw();                                                       //永远的刷新，否则就是等待很久，然后一次刷新
-	Sleep(2000);
-	setlinecolor(WHITE);                                                     //设置线条颜色
-	setfillcolor(WHITE);
-	fillcircle(bk, wt, RQ);												     //画棋子    
-	setbkcolor(WHITE);														 //文字背景   
-	settextcolor(BLACK);
-	_stprintf_s(bai, _T("%d"), 2);											 //把步数数字变成字符，下一步显示字符 
-	outtextxy(bk - 3, wt - 7, bai);											 //写白棋步数
-	luozi();
-	i++;
-	FlushBatchDraw();
+	
 }
 
 void SHA_bk()
@@ -1176,7 +1199,7 @@ void SHA_bk()
 					weizhi[x][y] = 0;
 					_stprintf_s(hong, _T("%d"), 0);                                        //把步数数字变成字符，下一步显示字符
 					outtextxy(x*B - 3, y*B - 7, hong);                                     //写步数
-					W_dead++;   //提子数量
+					B_dead++;   //提子数量
 					tizi();
 				}
 			}
@@ -1459,12 +1482,12 @@ void xiaqi_bk()
 
 void go_online_wt()
 {
+	int a, b;
 	int m = 3;
-	if (jieshou() % 2 == 0)
-	{
+	
 		a = jieshou() / 10000;
-		b = jieshou() % 1000 - 2;
-	}
+		b = jieshou() % 1000 -2;
+	
 	da_jie[1][0] = 0;                                                      //打劫的位置复位
 	da_jie[1][1] = 0;
 	//白棋行动，轮流下棋算法，步数除以2的余数，只有0或1，对应两个玩家
@@ -1478,7 +1501,7 @@ void go_online_wt()
 	fillcircle(a, b, RQ);
 	setbkcolor(WHITE);												   //文字背景   
 	settextcolor(BLACK);                                               //文字颜色
-																	   //_stprintf_s(bai, _T("%d"), i);                                   //把步数数字变成字符，下一步显示字符 
+   //_stprintf_s(bai, _T("%d"), i);                                   //把步数数字变成字符，下一步显示字符 
 	_stprintf_s(bai, _T("%d"), i);                                     //////
 	if (i >= 10)
 		m = 7;
@@ -1531,11 +1554,10 @@ void go_online_wt()
 void go_online_bk()
 {
 	int m = 3;
-	if (jieshou() % 2 == 1) 
-	{
+	int a, b;
 		a = jieshou() / 10000;
 		b = jieshou() % 1000 - 1;
-	}
+	
 	
 	da_jie[1][0] = 0;
 	da_jie[1][1] = 0;
