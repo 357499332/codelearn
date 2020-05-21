@@ -89,6 +89,9 @@
 *    (1) 、实现从文件读取棋谱并且复盘，利用到指针，读完文件后返回数组指针
 **************************************************************************************************************************/
 #include"头文件.h"
+char zuobiao[1024];
+int num;
+
 void daji();
 void bjmusic();
 void geussnum();
@@ -99,50 +102,56 @@ void fangkuai();
 void xianchen();
 void nei_cun();
 void tcs();
+void chuangkou();
 char c = 0;
+int zimu;
 
 int main()
 {
-	//void(*p)();                                           //函数指针
-	//p = weiqi;
+	void(*p)();                                           //函数指针
+	p = weiqi;
 	system("title 游戏盒子");                              //更改标题
 	system("color f4");							          //设置屏幕为白底红字
-	system("mode con cols=120 lines=50");            	  //设置窗口大小为120×50
+	system("mode con cols=120 lines=40");            	  //设置窗口大小为120列×40行
 	printf("输入1：贪吃蛇\n输入2：猜数游戏\n输入3：测试围棋\n输入4：打飞机(空格键射击）\n输入5：数学计算\n");
-	printf("输入6：移动方块（空格返回）\n输入7：线程检测\n输入8：红心\n输入9：内存观察\n");
+	printf("输入6：移动方块（空格返回）\n输入7：线程检测\n输入8：日历\n输入9：内存观察\n输入10：显示窗口\n");
 	
 	while (1)
 	{
 	
-		c = _getch();
-		switch (c)
+		//c = _getch();
+		scanf("%d",&zimu);
+		switch (zimu)
 		{
-		case '1':
-			tcs();                                    //贪吃蛇
+		case 1:
+			tcs();										  //贪吃蛇
 			break;
-		case '2':
-			geussnum();                               //猜数游戏
+		case 2:
+			geussnum();									  //猜数游戏
 			break;
-		case '3':
-			weiqi();
+		case 3:
+			(*p)();
 			break;
-		case '4':
+		case 4:
 			daji();
 			break;
-		case'5':
+		case 5:
 			suxue();
 			break;
-		case '6':
+		case 6:
 			fangkuai();
 			break;
-		case '7':
+		case 7:
 			xianchen();
 			break;
-		case '8':
+		case 8:
 			denglu();
 			break;
-		case '9':
+		case 9:
 			nei_cun();
+			break;
+		case 10:
+			chuangkou();
 			break;
 	
 		}
