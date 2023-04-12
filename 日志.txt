@@ -1,0 +1,305 @@
+1.https://www.appinn.com/markdown
+  https://www.jianshu.com/p/q81RER
+  东芝电脑如果BIOS设置了快速启动，则一开机就会快速进系统，不进行接口加载检测，导致无法从USB启动（如系统重装）
+  解决办法：同时按住F2和电源按钮开机，三秒后继续按住F2，松开电源按钮，则进入BIOS设置
+  惠普笔记本TPN-C125的拆机方法
+  https://jingyan.baidu.com/article/0320e2c166eae51b87507b01.html
+  同样网络，为何IPTV看电视不卡？网络电视app看电视就卡呢？
+  https://baijiahao.baidu.com/s?id=1613629822791026436&wfr=spider&for=pc
+  
+  五种原型材料
+  https://jingyan.baidu.com/article/19192ad81f1118e53f570775.html
+
+  牛逼的人不是一眼能看懂别人的代码，而是他写的代码别人能一眼看懂！
+  代码是写给人看的，不是写给机器看的，只是顺便计算机可以执行而已.
+  
+ 《黑客帝国》
+  https://www.ck180.net/23608.html  下载
+  https://www.zhihu.com/question/277288111  影评
+  https://www.bilibili.com/video/BV13b411p7nC?from=search&seid=4811383800313963959 动画版
+  http://www.ttmj.cc/detail/10795.html  根源
+  
+  第一性原理
+  https://www.zhihu.com/question/21459243/answer/214288420
+  https://zhuanlan.zhihu.com/p/26551274
+  四因论
+  https://www.jianshu.com/p/6e3e3f8fddf2
+  https://baike.baidu.com/item/%E5%9B%9B%E5%9B%A0%E8%AF%B4/479391?fr=aladdin
+  工具论
+  https://www.jianshu.com/p/567329c57b7c
+  
+  容错，高可用和灾备
+  http://www.ruanyifeng.com/blog/2019/11/fault-tolerance.html
+  1、汽车三个轮子能继续运行 2、汽车备胎 3、汽车+安全气囊、侧气帘+人
+  
+  代码的抽象三原则
+    http://www.ruanyifeng.com/blog/2013/01/abstraction_principles.html
+  1.DRY是 Don't repeat yourself 的缩写，意思是"不要重复自己"。这个原则有时也称为"一次且仅一次"原则（Once and Only Once）。
+  2.YAGNI是 You aren't gonna need it 的缩写，意思是"你不会需要它"。
+  3.Rule of three 称为"三次原则"，指的是当某个功能第三次出现时，才进行"抽象化"。
+  
+  你不需要它原则 (YAGNI)
+  这是 You Aren't Gonna Need It 的缩写。
+  只有当你需要某些东西的时候，才去实现它们，而不是在你预见的时候。
+  极限编程原则告诫开发人员，他们应该只实现当前所需的功能，并避免实现未来需要的功能，仅在必要时才实现。
+  遵守这一原则可以减小代码库大小，同时避免时间和生产力浪费在没有价值的功能上。
+  KISS 原则 (The KISS Principle)
+  KISS 原则指明了如果大多数的系统能够保持简单而非复杂化，那么他们便能够工作在最佳状态。因此，简单性应该是设计时的关键指标，同时也要避免不必要的复杂度。
+  盖尔定律 (Gall's Law)
+  一个切实可行的复杂系统势必是从一个切实可行的简单系统发展而来的。从头开始设计的复杂系统根本不切实可行，无法修修补补让它切实可行。
+  你必须由一个切实可行的简单系统重新开始。
+  盖尔定律说明了设计高度复杂的系统很可能会失败。它们很难一蹴而就，更多是从简单的系统逐渐演变而来。
+  最典型的例子便是互联网。如今的互联网是一个高度复杂的系统，而它最早只是被定义为一种在学术机构之间共享内容的方式。
+  互联网成功实现了最初的目标，并且随着时间不断演化，最终成就了如今的复杂繁荣。
+	
+  计算机是如何启动的？
+  http://www.ruanyifeng.com/blog/2013/02/booting.html
+  BIOS按照"启动顺序"，把控制权转交给排在第一位的储存设备。
+  这时，计算机读取该设备的第一个扇区，也就是读取最前面的512个字节。
+  如果这512个字节的最后两个字节是0x55和0xAA，表明这个设备可以用于启动；
+  如果不是，表明设备不能用于启动，控制权于是被转交给"启动顺序"中的下一个设备。
+  这最前面的512个字节，就叫做"主引导记录"（Master boot record，缩写为MBR）。
+ （1） 第1-446字节：调用操作系统的机器码。
+ （2） 第447-510字节：分区表（Partition table），总共64字节，"分区表"的作用，是将硬盘分成若干个区。
+ （3） 第511-512字节：主引导记录签名（0x55和0xAA）。
+	   硬盘分区有很多好处。考虑到每个区可以安装不同的操作系统，"主引导记录"因此必须知道将控制权转交给哪个区。
+	   分区表的长度只有64个字节，里面又分成四项，每项16个字节。所以，一个硬盘最多只能分四个一级分区，又叫做"主分区"。
+	   每个主分区的16个字节，由6个部分组成：
+ （1） 第1个字节：如果为0x80，就表示该主分区是激活分区，控制权要转交给这个分区。四个主分区里面只能有一个是激活的。
+ （2） 第2-4个字节：主分区第一个扇区的物理位置（柱面、磁头、扇区号等等）。
+ （3） 第5个字节：主分区类型。
+ （4） 第6-8个字节：主分区最后一个扇区的物理位置。
+ （5） 第9-12字节：该主分区第一个扇区的逻辑地址。
+ （6） 第13-16字节：主分区的扇区总数。
+  C语言当中文件指针定位硬盘文件位置就很好理解了，用指针记录逻辑地址的几个关键数据即可。数据库与数据表是核心。
+  为什么主引导记录的内存地址是0x7C00？
+  http://www.ruanyifeng.com/blog/2015/09/0x7c00.html
+  8088芯片本身需要占用0x0000～0x03FF，用来保存各种中断处理程序的储存位置。（主引导记录本身就是中断信号INT 19h的处理程序。）所以，
+  内存只剩下0x0400～0x7FFF可以使用。 为了把尽量多的连续内存留给操作系统，主引导记录就被放到了内存地址的尾部。由于一个扇区是512字节，
+  主引导记录本身也会产生数据，需要另外留出512字节保存。所以，它的预留位置就变成了：0x7FFF - 512 - 512 + 1 = 0x7BFF   
+  0x7BFF+1=0x7C00，操作系统启动后，主引导记录就没有用处了，此后它所在的内存地址可以被操作系统重新覆盖和再利用
+  
+2.任何带电体所带电量总是等于某一个最小电量的整数倍,这个最小电量叫做基元电荷,也称元电荷,用e表示,1e=1.602 176 634  ×10-19C ,在计算中可取 。
+  它等于一个电子所带电量的多少,也等于一个质子所带电量的多少。1库仑等于6.25×10^18个元电荷所带电荷量。1库仑=1安培·秒 =1000mAs=0.28mAH，
+  小米9手机电量为3300mAH,3300mAH/0.28mAH=11880C=1.188*10^4C，总共电荷量为6.25×10^18  *  1.188*10^4=7.425*10^22e。
+  小米手机屏幕分辨率为2340*1080=2527200=2.5272*10^6,每个像素点有三个基色板，每个板为256色，根据面板技术和电子枪历史数据统计，点亮一个基色板
+  需要2500个电子，三个板总计256*256*256*2500=16777216*2500=1.6*2.5*10^10（所谓的RGB1600万色）,
+  由于手机亮度以及色彩对比度饱和度的差别，可将每个像素点消耗电量打折，但数量级不变，仍然为10^7，按正常屏幕刷新率60HZ计算，
+  每秒消耗元电荷e的数量为2.5272*10^6*2.5*10^10*60=10^18e/s，计算到小时就是3.6*2.5*10^18。手机总电量7.425*10^22e/（3.6*2.5*10^21）=8h。
+  所以如果你屏幕一直正常亮度开着，手机使用不会超过8小时，也就是手机使用时长极限等效为3300/8=412.5mA/h，即400mAH电池容量最多支持手机持续点亮1小时。
+  华为4000mAH电量手机能持续支撑9.7*（2340*1080）/(1920*1080)=11.64小时。
+  注意，这个数据不考虑在亮屏情况下持续的网络、蓝牙、FM数据交换、系统待机功耗或者播放声音。
+
+
+
+4.**免费软件 Xshell 和 Xftp 都是 NetSarang 出品的优秀网络管理、安全传输工具。Xshell 是一个免费的安全终端仿真器，
+  可以作为 SSH、TELNET 或 RLOGIN 的终端模拟，能够从 Windows 平台安全连接 Linux 服务器，Xftp 则是安全传输客户端，
+  支持 FTP 和 SFTP 协议，两者都支持标签化的会话窗口。如果你的项目部署到Liunx下面，这样的工具少不了。**
+  
+5.*每一位程序员都有一套自己喜爱的代码编辑器与编程字体，譬如我们之前就推荐过一款“神器”级别的代码编辑器 Sublime Text 2，
+  而今天我们则推荐一款相当不错的编程字体 —— Source Code Pro！Source Code Pro 是由大名鼎鼎的 Adobe 公司发布的一款开源且
+  完全免费的等宽编程字体，它非常适合用于阅读代码，支持 Linux、Mac OS X 和 Windows 等操作系统，而且无论商业或个人都可以
+  免费使用，相当厚道。这款字体和微软的 Consolas 一样均定位于“编程字体”，相信作为天天接触代码的开发者，你肯定不会错过这
+  一新选择吧……*
+6.FileSearchy Pro 虽然 Listary、Everything 等神器可以通过文件夹快速搜索或定位文件，但如果想搜索一些文本文档里面的内容，
+  它们就无能为力了。FileSearchy Pro 是一款实用的文档全文搜索软件，它支持快速搜索文档内部全部内容。相比很多同类软件，
+  它有一个很大的优点就是并不需要事先对文档进行索引，直接搜索速度也不慢。FileSearchy Pro 支持查找 
+  TXT、PDF、Word、Excel、html 网页文件、代码文件等文档，你还可以限定文件夹位置、修改时间、文件大小等。软件还支持多标签页，
+  可以同时搜索多个结果也很方便。
+
+7.Stylify Me 在设计网页时，最重要的一项便是网页的配色，颜色的使用在网页制作中起着非常关键的作用，不同的网站有着自己不同的风格，
+  也有着自己不同的颜色。今天给大家介绍一个在线生成网站配色的工具——Stylify Me。
+  Stylify Me，它可以获取帮我们获取一个网站的配色，字体，大小等风格信息。当你看到一个网站，对他的配色，字体等样式信息非常感兴趣，
+  只需要输入网址，即可分析出网页使用的所有颜色，包括背景颜色、文字颜色、字体、字体大小等样式，生成的结果还可以通过 PDF 格式下载保存，
+  非常方便。
+ 
+8.  GNU Go是免费的带源代码的人机对弈软件，棋力在九级左右。和其它GNU 软件一样， 它遵从 GNU 公用许可证GPL。你可免费获得它的源代码，
+    并可自由使用和修改。 但GNU    
+    GO只提供字符界面，更多相关内容请参见其主页： http://www.gnu.org/software/gnugo/gnugo.html
+    最早的版本是1995年，所有版本源码下载可以到： http://ftp.gnu.org/gnu/gnugo/
+
+
+10. git 执行git pull –rebase报错误如下： 
+    error: Cannot pull with rebase: You have unstaged changes. 
+    error: Additionally, your index contains uncommitted changes. 
+	原因：如果有未提交的更改，是不能git pull的
+	解决： 
+	先执行git stash 
+	再执行git pull --rebase 
+	最后再执行git stash pop
+	
+	 ! [rejected]        master -> master (non-fast-forward)
+     error: failed to push some refs to 'https://github.com/357499332/codelearn'
+     hint: Updates were rejected because the tip of your current branch is behind
+     hint: its remote counterpart. Integrate the remote changes (e.g.
+     hint: 'git pull ...') before pushing again.
+     hint: See the 'Note about fast-forwards' in 'git push --help' for details.
+	 
+	 有如下几种解决方法：
+
+	1.使用强制push的方法：
+
+	$ git push -u origin master -f 
+
+	这样会使远程修改丢失，一般是不可取的，尤其是多人协作开发的时候。
+
+	2.push前先将远程repository修改pull下来
+
+	$ git pull origin master
+
+	$ git push -u origin master
+
+	3.若不想merge远程和本地修改，可以先创建新的分支：
+
+	$ git branch [name]
+
+	然后push
+	
+	3.1、先合并之前的历史，再进行提交——提倡使用
+   （1）先把git的东西fetch到你本地然后merge后再push
+
+    $ git fetch origin master
+
+	$ git merge origin FETCH_HEAD 
+	先抓取远程仓库的更新到本地，然后与你的本地仓库合并，（如果有冲突就要解决冲突后再合并，冲突问题比较复杂，这里就不详细说了），
+	这样就可以使远程仓库和你本地仓库一致了，然后就可以提交修改了。
+
+	（2）这2句命令等价于
+	$ git pull origin master
+
+	但是使用git fetch + git merge 更加安全。 
+
+	（3）git pull --rebase origin master
+
+	重定基，可以是历史更加统一，即使提交历史趋向于一条直线。
+
+	补充：他们之间的关系
+
+	git pull = git fetch + git merge FETCH_HEAD 
+
+	git pull --rebase =  git fetch + git rebase FETCH_HEAD
+
+	3.2、丢弃之前的历史，强推——谨慎使用
+	强推，即利用强覆盖方式用你本地的代码替代git仓库内的内容
+
+	$ git push -f  或者 $ git push --force
+
+	官方文档提示：This flag disables these checks, and can cause the remote repository to lose commits; use it with care.
+	（即：此标志禁用这些检查，并可能导致远程存储库丢失提交；小心使用。）
+
+	俗话说得好：“强扭的瓜不甜”，强制（暴力）执行总会产生一些不好的结果，应慎重考虑是否使用该命令！！！
+
+
+	$ git push -u origin [name]
+	 
+	 删除 .git里面的COMMIT_EDITMSG文件
+	 如果直接在网页上修改了readme 日志文件，一定要同步到本地，复制粘贴即可，否则出现上面错误
+
+11   C语言访问MYSQL数据库的完整的代码例子
+	  https://www.cnblogs.com/rupeng/archive/2012/10/06/2712841.html
+	  
+12  围棋棋谱软件网站
+    http://game.onegreen.net/weiqi/HTML/60535.html
+	
+13  两台电脑直接用网线连接
+   （1）https://blog.csdn.net/hpf247/article/details/54812591
+   （2）https://blog.csdn.net/GMCN__/article/details/82048456
+   （3）https://jingyan.baidu.com/article/fb48e8bee26d466e622e1483.html
+   
+14  围棋形式判断算法 http://blog.sina.com.cn/s/blog_a1204ac80101kq61.html
+
+15  在C语言中，编译时系统会先给变量zd赋予默认值，其中，当定义一个int型变量时，系统会自动给该int型变量赋值于-858993460，
+    这种情况在内Visual  C++ 6.0中编译时一般会有提示。
+    例如下容C语言代码：
+    #include <stdio.h>void main()
+	{ int a; //没有给int型变量赋予初值。 printf("%d\n",a);}
+    输出：-858993460
+    要想改变这种情况，就要养成给变量赋予初值的习惯，例如下C语言代码：
+    #include <stdio.h>
+	void main()
+	{ int a=0; //给int型变量赋予初值0。 printf("%d\n",a);}
+    输出：0
+
+16  App中需要即时通信功能，完全可以使用融云、环信、网易云信等服务快速集成。
+
+	App中添加支付功能，完全可以使用Ping++或Pay++来解决诸多支付渠道的集成问题。
+
+	添加分享功能，ShareSDK、友盟SDK可以节省你很多时间。
+
+	做跨平台的游戏，使用Cocos2d-x远比自己在Android、iOS上从底层从OpenGL ES干起要高效得多。
+
+	网站支持更多用户更多并发，能够快速部署、迁移、规模复制，可以借助阿里云、AWS、Azure等而没必要自己搞。
+
+	推送消息给用户，就可以用腾讯信鸽、极光、个推、百度云推送、友盟等。
+	
+	优秀的 PHP 开源框架：
+	官方开源框架有 Zend Framework、CakePHP、Yaf、Symfony 等；
+	第三方开源框架有 ThinkPHP、Laravel、Yii 等等。
+
+	优秀的 PHP 开源系统：
+	开源博客（Blog）系统有 WordPress、Z-Blog、emlog 等；
+	开源的内容管理系统（CMS）有 DedeCMS（织梦CMS）、PHPCMS、EmpireCMS（帝国CMS）；
+	开源的论坛系统（BBS）有 Discuz、PHPwind、StartBBS 等；
+	开源的社交网络系统（SNS）有 UCHome、ThinkSNS 等；
+	开源的商城系统 Ecshop、ShopEx 等。
+	
+17  Qt 虽然经常被当做一个 GUI 库，用来开发图形界面应用程序，但这并不是 Qt 的全部；Qt 		
+	除了可以绘制漂亮的界面（包括控件、布局、交互），还包含很多其它功能，比如多线程、访问数据库、图像处理、
+	音频视频处理、网络通信、文件操作等，这些 Qt 都已经内置了。Qt 是应用程序开发的一站式解决方案，有了 Qt，你就可以高枕无忧了！
+	Qt 本身包含的模块也日益丰富， 一直有新模块和第三方模块加入进来。 大部分应用程序都可以使用 Qt 实现，除了与计算机底层结合特别紧密的，
+	例如驱动开发，它直接使用硬件提供的编程接口，而不能使用操作系统自带的函数库。
+	下面的软件都使用 Qt 开发：WPS、YY语音、Skype、豆瓣电台、虾米音乐、淘宝助理、千牛、暴雪的战网客户端、VirtualBox、Opera、
+	咪咕音乐、谷歌地图、Photoshop Album 等。 Linux 也是嵌入式的主力军，广泛应用于消费类电子、工业控制、军工电子、电信/网络/通讯、
+	航空航天、汽车电子、医疗设备、仪器仪表等相关行业。
+	Qt 虽然也支持手机操作系统，但是由于 Android 本身已经有 Java 和 Kotlin，iOS 本身已经有 Objective-C 和 Swift，
+	所以 Qt 在移动端的市场份额几乎可以忽略。总起来说，
+	Qt 主要用于桌面程序开发和嵌入式开发。
+
+18  C语言面向对象
+	https://blog.csdn.net/kxcfzyk/article/details/21331945
+	https://blog.csdn.net/onlyshi/article/details/81672279
+	一天入门51单片机
+    http://www.buffalotone.com/?p=338
+	
+	java中swing名字的来源
+	因为AWT比较失败，所以SUN重新设计了GUI这方面的包，这些工作都是包给 borland 公司做的，代号是SWING，后来做出来之后就沿用这个名字了。
+    AWT(Abstract Window Toolkit)，中文译为抽象窗口工具包，该包提供了一套与本地图形界面进行交互的接口，
+	是Java提供的用来建立和设置Java的图形用户界面的基本工具。
+	
+19. <iframe src="//player.bilibili.com/player.html?aid=60016166&cid=104514776&page=1&high_quality=1&danmaku=0" 
+    allowfullscreen="allowfullscreen" width="100%"   
+    height="500" scrolling="no" frameborder="0" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
+
+20.收藏几款好用的网页下载工具（网页下载器）
+
+	webzip
+	一款国外的网页下载器，把一个网站下载并压缩到一个单独的ZIP文件中，可以帮您将某个站台全部或部份之资料以ZIP格式压缩起来，
+	可供你日后快速浏览这个网站。且新一版的功能包括可排定时间来下载，亦加强相当漂亮的立体界面及传输的曲线图。
+
+	TeleportUltra Teleport Ultra
+	所能做的，不仅仅是离线浏览某个网页(让你离线快速浏览某个网页的内容当然是它的一项重要功能)，它可以从Internet的任何地方抓回你想要的任何文件，
+	它可以在你指定的时间自动登录到你指定的网站下载你指定的内容，你还可以用它来创建某个网站的完整的镜象，作为创建你自己的网站的参考。
+
+	小飞兔下载
+	小飞兔整站下载是一款只需输入一个网址就能下载一个网站的软件，它可以从Internet下载你想要的网页，
+	主要是用来快速搭建网站、深层分析网站、网站克隆、离线浏览等。软件四大功能：整站下载、网页批量下载、整站批量下载、整站图片下载。
+	特点：自定义文件结构、转换编码、自定义标签、智能识别链接、网页翻译、Http代理等。
+
+	Mihov Picture Downloader
+	Mihov Picture Downloader 是一款用于从一个网页下载所有的图片的简单工具.只需要输入网络地址,其它的工作就由该软件去做.
+	所有的图片将下载到你的计算机硬盘驱动器上的一个文件夹当中。
+
+	WinHTTrack HTTrack
+	WinHTTrack HTTrack 是一款简单易用的离线浏览器实用工具.该软件允许你从互联网上传输一个网站到一个本地目录当中,从服务器创建递归所有结构,
+	获得 html,图像以及其它文件到你的计算机当中.相关的链接被重新创建,因此你可以自由地浏览本地的网站(适用于任何浏览器).
+	你可以把若干个网站镜像到一起,以便你可以从一个网站跳转到另一个网站上.你还可以更新现存的镜像站点,或者继续一个被中断的传输.
+	该带有许多选项和功能的装置是完全可配置的.该软件的资源是开放的。
+
+	仿站小工具
+	通过网址下载静态网页的仿站工具，适用于SEO、前端人员的高效仿站工具。在仿站小工具输入网址一键下载页面相关素材并自动修正代码链接，
+	按分类保存到不同目录中。
+
+
+
+
+
